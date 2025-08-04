@@ -26,63 +26,25 @@ We are thrilled to release **Qwen-Image**, a 20B MMDiT image foundation model th
 
 ## Quick Start
 
-Install the latest version of diffusers
 ```
-pip install git+https://github.com/huggingface/diffusers
+git clone https://github.com/QwenLM/Qwen-Image
+cd Qwen-Image
+conda create -n Qwen-Image python=3.10
+conda activate Qwen-Image
+pip install torch torchvision --extra-index-url https://download.pytorch.org/whl/cu128
+pip install -r requirements.txt
 ```
-
-The following contains a code snippet illustrating how to use the model to generate images based on text prompts:
-
-```python
-from diffusers import DiffusionPipeline
-import torch
-
-model_name = "Qwen/Qwen-Image"
-
-# Load the pipeline
-if torch.cuda.is_available():
-    torch_dtype = torch.bfloat16
-    device = "cuda"
-else:
-    torch_dtype = torch.float32
-    device = "cpu"
-
-pipe = DiffusionPipeline.from_pretrained(model_name, torch_dtype=torch_dtype)
-pipe = pipe.to(device)
-
-positive_magic = {
-    "en": "Ultra HD, 4K, cinematic composition.", # for english prompt
-    "zh": "超清，4K，电影级构图" # for chinese prompt
-}
-
-# Generate image
-prompt = '''A coffee shop entrance features a chalkboard sign reading "Qwen Coffee 😊 $2 per cup," with a neon light beside it displaying "通义千问". Next to it hangs a poster showing a beautiful Chinese woman, and beneath the poster is written "π≈3.1415926-53589793-23846264-33832795-02384197".'''
-
-negative_prompt = " " # Recommended if you don't use a negative prompt.
-
-
-# Generate with different aspect ratios
-aspect_ratios = {
-    "1:1": (1328, 1328),
-    "16:9": (1664, 928),
-    "9:16": (928, 1664),
-    "4:3": (1472, 1140),
-    "3:4": (1140, 1472)
-}
-
-width, height = aspect_ratios["16:9"]
-
-image = pipe(
-    prompt=prompt + positive_magic["en"],
-    negative_prompt=negative_prompt,
-    width=width,
-    height=height,
-    num_inference_steps=50,
-    true_cfg_scale=4.0,
-    generator=torch.Generator(device="cuda").manual_seed(42)
-).images[0]
-
-image.save("example.png")
+Download the model weights:
+```
+python download.py
+```
+Quick start with the gradio demo. Cost vram 39G:
+```
+python app.py
+```
+Quick start with the low vram mode. Cost vram 22G:
+```
+python app.py --vram low
 ```
 
 ## Show Cases
