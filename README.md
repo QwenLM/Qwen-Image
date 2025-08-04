@@ -25,7 +25,6 @@ We are thrilled to release **Qwen-Image**, a 20B MMDiT image foundation model th
 - Due to heavy traffic, if you'd like to experience our demo online, we also recommend visiting DashScope, WaveSpeed, and LibLib. Please find the links below in the community support.
 
 ## Quick Start
-
 ```
 git clone https://github.com/QwenLM/Qwen-Image
 cd Qwen-Image
@@ -173,4 +172,5 @@ If you'd like to get in touch with our research team, we'd love to hear from you
 If you have questions about this repository, feedback to share, or want to contribute directly, we welcome your issues and pull requests on GitHub. Your contributions help make Qwen-Image better for everyone. 
 
 If you're passionate about fundamental research, we're hiring full-time employees (FTEs) and research interns. Don't wait — reach out to us at fulai.hr@alibaba-inc.com
+
 
