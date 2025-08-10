@@ -99,6 +99,59 @@ image = pipe(
 image.save("example.png")
 ```
 
+### Low RAM Inference
+
+For systems with limited RAM, you can use the following optimized setup that includes 8-bit quantization and CPU offloading:
+
+```python
+import torch
+from diffusers import QwenImagePipeline
+from transformers import Qwen2_5_VLForConditionalGeneration
+from diffusers.models import QwenImageTransformer2DModel
+from torchao.quantization import quantize_, Float8WeightOnlyConfig
+
+dtype = torch.bfloat16
+device = "cuda" if torch.cuda.is_available() else "cpu"
+
+text_encoder = Qwen2_5_VLForConditionalGeneration.from_pretrained(
+    "Qwen/Qwen2.5-VL-7B-Instruct", 
+    torch_dtype=dtype,
+    device_map="auto"
+)
+quantize_(text_encoder, Float8WeightOnlyConfig())
+
+transformer = QwenImageTransformer2DModel.from_pretrained(
+    "Qwen/Qwen-Image", 
+    subfolder="transformer", 
+    torch_dtype=dtype,
+    device_map="auto"
+)
+quantize_(transformer, Float8WeightOnlyConfig())
+
+pipe = QwenImagePipeline.from_pretrained(
+    "Qwen/Qwen-Image",
+    text_encoder=text_encoder,
+    transformer=transformer,
+    torch_dtype=dtype,
+    device_map="auto"
+)
+
+pipe.enable_model_cpu_offload()
+
+prompt = "A beautiful sunset over mountains, photorealistic style"
+image = pipe(
+    prompt=prompt,
+    negative_prompt="text, watermark, copyright, blurry, low resolution",
+    width=1024,
+    height=1024,
+    num_inference_steps=30,  
+    true_cfg_scale=4.0,
+    guidance_scale=1.0
+).images[0]
+
+image.save("low_ram_output.png")
+```
+
 ## Show Cases
 
 One of its standout capabilities is high-fidelity text rendering across diverse images. Whether it's alphabetic languages like English or logographic scripts like Chinese, Qwen-Image preserves typographic details, layout coherence, and contextual harmony with stunning accuracy. Text isn't just overlaid, it's seamlessly integrated into the visual fabric.
