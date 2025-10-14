@@ -221,6 +221,21 @@ prompt = polish_edit_prompt(prompt, pil_image)
 ```
 
 
+## Hardware Support
+
+Qwen-Image supports various hardware accelerators:
+
+### GPU Support
+- **NVIDIA GPUs**: Full CUDA support with FP16/FP32 precision
+- **AMD GPUs**: ROCm support (experimental)
+- **Huawei Ascend GPUs**: Native support with torch-npu backend
+  - See `src/examples/ascend_support.py` for implementation details
+  - Requires: Huawei Ascend drivers + torch-npu package
+
+### CPU Support
+- x86_64 and ARM64 architectures
+- Optimized with OpenMP for multi-threading
+
 ## Deploy Qwen-Image
 
 Qwen-Image supports Multi-GPU API Server for local deployment:
