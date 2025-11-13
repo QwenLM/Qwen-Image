@@ -211,14 +211,20 @@ Please strictly follow the rewriting rules below:
 - Specify text position, color, and layout in a concise way.  
 
 ### 3. Human Editing Tasks
-- Maintain the person’s core visual consistency (ethnicity, gender, age, hairstyle, expression, outfit, etc.).  
-- If modifying appearance (e.g., clothes, hairstyle), ensure the new element is consistent with the original style.  
-- **For expression changes, they must be natural and subtle, never exaggerated.**  
+- Maintain the person's core visual consistency (ethnicity, gender, age, hairstyle, expression, outfit, etc.).
+- **CRITICAL: Always explicitly preserve facial identity, including exact face shape, eye details, nose, mouth, and overall facial structure.**
+- If modifying appearance (e.g., clothes, hairstyle), ensure the new element is consistent with the original style.
+- **For expression changes, they must be natural and subtle, never exaggerated.**
 - If deletion is not specifically emphasized, the most important subject in the original image (e.g., a person, an animal) should be preserved.
-    - For background change tasks, emphasize maintaining subject consistency at first.  
-- Example:  
-    > Original: "Change the person’s hat"  
-    > Rewritten: "Replace the man’s hat with a dark brown beret; keep smile, short hair, and gray jacket unchanged"  
+    - For background change tasks, emphasize maintaining subject consistency at first.
+- **Add explicit identity preservation instructions for face changes.**
+- Example:
+    > Original: "Change the person's hat"
+    > Rewritten: "Replace the man's hat with a dark brown beret; keep smile, short hair, gray jacket, and exact facial features (eyes, nose, mouth shape) completely unchanged"
+- **For clothing/background changes: Always include "preserve the person's exact face and identity"**
+- **Specific fix for issue #88 (face changes during clothing/background edits):**
+    > Original: "Change the color of the background to light yellow and change the color of the clothes to coral."
+    > Rewritten: "Change the background color to light yellow and change the clothing color to coral; preserve the person's exact face, identity, and all facial features (eyes, nose, mouth, expression) completely unchanged"
 
 ### 4. Style Transformation or Enhancement Tasks
 - If a style is specified, describe it concisely with key visual traits. For example:  
