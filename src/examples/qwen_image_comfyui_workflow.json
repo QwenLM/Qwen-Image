@@ -1,0 +1,107 @@
+{
+  "1": {
+    "inputs": {
+      "ckpt_name": "Qwen/Qwen-Image"
+    },
+    "class_type": "CheckpointLoaderSimple",
+    "_meta": {
+      "title": "Load Qwen-Image Checkpoint"
+    }
+  },
+  "2": {
+    "inputs": {
+      "text": "A slide featuring artistic, decorative shapes framing neatly arranged textual information styled as an elegant infographic. At the very center, the title \"Habits for Emotional Wellbeing\" appears clearly, surrounded by a symmetrical floral pattern. On the left upper section, \"Practice Mindfulness\" appears next to a minimalist lotus flower icon, with the short sentence, \"Be present, observe without judging, accept without resisting\". Next, moving downward, \"Cultivate Gratitude\" is written near an open hand illustration, along with the line, \"Appreciate simple joys and acknowledge positivity daily\". Further down, towards bottom-left, \"Stay Connected\" accompanied by a minimalistic chat bubble icon reads \"Build and maintain meaningful relationships to sustain emotional energy\". At bottom right corner, \"Prioritize Sleep\" is depicted next to a crescent moon illustration, accompanied by the text \"Quality sleep benefits both body and mind\". Moving upward along the right side, \"Regular Physical Activity\" is near a jogging runner icon, stating: \"Exercise boosts mood and relieves anxiety\". Finally, at the top right side, appears \"Continuous Learning\" paired with a book icon, stating \"Engage in new skill and knowledge for growth\". The slide layout beautifully balances clarity and artistry, guiding the viewers naturally along each text segment",
+      "clip": [
+        "1",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "CLIP Text Encode (Prompt)"
+    }
+  },
+  "3": {
+    "inputs": {
+      "text": "",
+      "clip": [
+        "1",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "CLIP Text Encode (Negative Prompt)"
+    }
+  },
+  "4": {
+    "inputs": {
+      "seed": 42,
+      "steps": 50,
+      "cfg": 4.0,
+      "sampler_name": "euler",
+      "scheduler": "normal",
+      "denoise": 1.0,
+      "model": [
+        "1",
+        0
+      ],
+      "positive": [
+        "2",
+        0
+      ],
+      "negative": [
+        "3",
+        0
+      ],
+      "latent_image": [
+        "5",
+        0
+      ]
+    },
+    "class_type": "KSampler",
+    "_meta": {
+      "title": "KSampler"
+    }
+  },
+  "5": {
+    "inputs": {
+      "width": 1664,
+      "height": 928,
+      "batch_size": 1
+    },
+    "class_type": "EmptyLatentImage",
+    "_meta": {
+      "title": "Empty Latent Image"
+    }
+  },
+  "6": {
+    "inputs": {
+      "samples": [
+        "4",
+        0
+      ],
+      "vae": [
+        "1",
+        2
+      ]
+    },
+    "class_type": "VAEDecode",
+    "_meta": {
+      "title": "VAE Decode"
+    }
+  },
+  "7": {
+    "inputs": {
+      "filename_prefix": "QwenImage_Replicated",
+      "images": [
+        "6",
+        0
+      ]
+    },
+    "class_type": "SaveImage",
+    "_meta": {
+      "title": "Save Image"
+    }
+  }
+}
