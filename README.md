@@ -3,9 +3,9 @@
 <p> 
 <p align="center">&nbsp&nbsp💜 <a href="https://chat.qwen.ai/">Qwen Chat</a>&nbsp&nbsp |
            &nbsp&nbsp🤗 <a href="https://huggingface.co/Qwen/Qwen-Image">HuggingFace(T2I)</a>&nbsp&nbsp |
-           &nbsp&nbsp🤗 <a href="https://huggingface.co/Qwen/Qwen-Image-Edit">HuggingFace(Edit)</a>&nbsp&nbsp | &nbsp&nbsp🤖 <a href="https://modelscope.cn/models/Qwen/Qwen-Image">ModelScope-T2I</a>&nbsp&nbsp | &nbsp&nbsp🤖 <a href="https://modelscope.cn/models/Qwen/Qwen-Image-Edit">ModelScope-Edit</a>&nbsp&nbsp| &nbsp&nbsp 📑 <a href="https://arxiv.org/abs/2508.02324">Tech Report</a> &nbsp&nbsp | &nbsp&nbsp 📑 <a href="https://qwenlm.github.io/blog/qwen-image/">Blog(T2I)</a> &nbsp&nbsp | &nbsp&nbsp 📑 <a href="https://qwenlm.github.io/blog/qwen-image-edit/">Blog(Edit)</a> &nbsp&nbsp 
+           &nbsp&nbsp🤗 <a href="https://huggingface.co/Qwen/Qwen-Image-Edit-2511">HuggingFace(Edit)</a>&nbsp&nbsp | &nbsp&nbsp🤖 <a href="https://modelscope.cn/models/Qwen/Qwen-Image">ModelScope-T2I</a>&nbsp&nbsp | &nbsp&nbsp🤖 <a href="https://modelscope.cn/models/Qwen/Qwen-Image-Edit-2511">ModelScope-Edit</a>&nbsp&nbsp| &nbsp&nbsp 📑 <a href="https://arxiv.org/abs/2508.02324">Tech Report</a> &nbsp&nbsp | &nbsp&nbsp 📑 <a href="https://qwenlm.github.io/blog/qwen-image/">Blog(T2I)</a> &nbsp&nbsp | &nbsp&nbsp 📑 <a href="https://qwenlm.github.io/blog/qwen-image-edit-2511/">Blog(Edit)</a> &nbsp&nbsp 
 <br>
-🖥️ <a href="https://huggingface.co/spaces/Qwen/Qwen-Image">T2I Demo</a>&nbsp&nbsp | 🖥️ <a href="https://huggingface.co/spaces/Qwen/Qwen-Image-Edit">Edit Demo</a>&nbsp&nbsp | &nbsp&nbsp💬 <a href="https://github.com/QwenLM/Qwen-Image/blob/main/assets/wechat.png">WeChat (微信)</a>&nbsp&nbsp | &nbsp&nbsp🫨 <a href="https://discord.gg/CV4E9rpNSD">Discord</a>&nbsp&nbsp
+🖥️ <a href="https://huggingface.co/spaces/Qwen/Qwen-Image">T2I Demo</a>&nbsp&nbsp | 🖥️ <a href="https://huggingface.co/spaces/Qwen/Qwen-Image-Edit-2511">Edit Demo</a>&nbsp&nbsp | &nbsp&nbsp💬 <a href="https://github.com/QwenLM/Qwen-Image/blob/main/assets/wechat.png">WeChat (微信)</a>&nbsp&nbsp | &nbsp&nbsp🫨 <a href="https://discord.gg/CV4E9rpNSD">Discord</a>&nbsp&nbsp
 </p>
 
 <p align="center">
@@ -19,6 +19,13 @@ We are thrilled to release **Qwen-Image**, a 20B MMDiT image foundation model th
 ![](https://qianwen-res.oss-cn-beijing.aliyuncs.com/Qwen-Image/bench.png#center)
 
 ## News
+- 2025.12.23: We released Qwen-Image-Edit-2511 weights! Check at [Huggingface](https://huggingface.co/Qwen/Qwen-Image-Edit-2511) and [ModelScope](https://modelscope.cn/models/Qwen/Qwen-Image-Edit-2511)!
+- 2025.12.23: We released Qwen-Image-Edit-2511! Check our [Blog](https://qwenlm.github.io/blog/qwen-image-edit-2511) for more details!
+- 2025.12.23: **[LightX2V](https://github.com/ModelTC/LightX2V/)** delivers Day 0 acceleration for Qwen-Image-Edit-2511, with native support for a wide range of hardware, including **NVIDIA, Hygon, Metax, Ascend, and Cambricon**. By combining **[diffusion distillation](https://github.com/ModelTC/Qwen-Image-Lightning)** with cutting-edge inference optimizations, LightX2V achieves a **25x reduction in DiT NFEs** and **an order-of-magnitude 42.55x overall speedup**, enabling real-time image editing across diverse AI accelerators.
+- 2025.12.23: **vLLM-Omni** supports high performance `Qwen-Image-Edit-2511`, `Qwen-Image-Layered` inference from Day-0, with long sequence parallelism, cache acceleration and fast kernels, please check [here](https://github.com/vllm-project/vllm-omni/tree/main/examples/offline_inference/image_to_image) for details.
+
+- 2025.12.23: **SGLang-Diffusion** provides day-0 support for Qwen-Image models. To play with `Qwen-Image-Edit-2511` in SGlang, please check community supports section for details.
+
 - 2025.12.19: We released Qwen-Image-Layered weights! Check at [Huggingface](https://huggingface.co/Qwen/Qwen-Image-Layered) and [ModelScope](https://modelscope.cn/models/Qwen/Qwen-Image-Layered)!
 - 2025.12.19: We released Qwen-Image-Layered! Check our [Blog](https://qwenlm.github.io/blog/qwen-image-layered) for more details!
 - 2025.12.18: We released our [Research Paper](https://arxiv.org/abs/2512.15603) on Arxiv!
@@ -59,6 +66,42 @@ We are thrilled to release **Qwen-Image**, a 20B MMDiT image foundation model th
 ```
 pip install git+https://github.com/huggingface/diffusers
 ```
+
+### Qwen-Image-Edit-2511 (for Image Editing, Multiple Image Support and Improved Consistency)
+
+```python
+import os
+import torch
+from PIL import Image
+from diffusers import QwenImageEditPlusPipeline
+from io import BytesIO
+import requests
+
+pipeline = QwenImageEditPlusPipeline.from_pretrained("Qwen/Qwen-Image-Edit-2509", torch_dtype=torch.bfloat16)
+print("pipeline loaded")
+
+pipeline.to('cuda')
+pipeline.set_progress_bar_config(disable=None)
+image1 = Image.open(BytesIO(requests.get("https://qianwen-res.oss-accelerate-overseas.aliyuncs.com/Qwen-Image/edit2511/edit2511input.png").content))
+prompt = "这个女生看着面前的电视屏幕，屏幕上面写着“阿里巴巴”"
+inputs = {
+    "image": [image1],
+    "prompt": prompt,
+    "generator": torch.manual_seed(0),
+    "true_cfg_scale": 4.0,
+    "negative_prompt": " ",
+    "num_inference_steps": 40,
+    "guidance_scale": 1.0,
+    "num_images_per_prompt": 1,
+}
+with torch.inference_mode():
+    output = pipeline(**inputs)
+    output_image = output.images[0]
+    output_image.save("output_image_edit_2511.png")
+    print("image saved at", os.path.abspath("output_image_edit_2511.png"))
+```
+
+
 
 ### Qwen-Image (for Text-to-Image)
 
@@ -256,80 +299,59 @@ DASHSCOPE_API_KEY=sk-xxxxxxxxxxxxxxxxx python examples/demo.py
 ## Showcase
 For previous showcases, click the following links:
 - [Qwen-Image](./Qwen-Image.md)
-- [Qwen-Image-Edit](./Qwen-Image.md)
+- [Qwen-Image-Edit](./Qwen-Image-Edit.md)
+- [Qwen-Image-Edit-2509](./Qwen-Image-Edit-2509.md)
 
-### Showcase of Qwen-Image Edit-2509
-**The primary update in Qwen-Image-Edit-2509 is support for multi-image inputs.**
+### Showcase of Qwen-Image Edit-2511
+**Qwen-Image-Edit-2511 Enhances Character Consistency**
+In Qwen-Image-Edit-2511, character consistency has been significantly improved. The model can perform imaginative edits based on an input portrait while preserving the identity and visual characteristics of the subject.
 
-Let’s first look at a "person + person" example:  
-![Person + Person](https://qianwen-res.oss-cn-beijing.aliyuncs.com/Qwen-Image/edit2509/幻灯片19.JPG#center)
+![](https://qianwen-res.oss-cn-beijing.aliyuncs.com/Qwen-Image/edit2511/幻灯片1.JPG#center)
+![](https://qianwen-res.oss-cn-beijing.aliyuncs.com/Qwen-Image/edit2511/幻灯片2.JPG#center)
+![](https://qianwen-res.oss-cn-beijing.aliyuncs.com/Qwen-Image/edit2511/幻灯片3.JPG#center)
+![](https://qianwen-res.oss-cn-beijing.aliyuncs.com/Qwen-Image/edit2511/幻灯片4.JPG#center)
 
-Here is a "person + scene" example:  
-![Person + Scene](https://qianwen-res.oss-cn-beijing.aliyuncs.com/Qwen-Image/edit2509/幻灯片20.JPG#center)
+**Improved Multi-Person Consistency**
+While Qwen-Image-Edit-2509 already improved consistency for single-subject editing, Qwen-Image-Edit-2511 further enhances consistency in multi-person group photos—enabling high-fidelity fusion of two separate person images into a coherent group shot:
+![](https://qianwen-res.oss-cn-beijing.aliyuncs.com/Qwen-Image/edit2511/幻灯片5.JPG#center)
+![](https://qianwen-res.oss-cn-beijing.aliyuncs.com/Qwen-Image/edit2511/幻灯片6.JPG#center)
 
-Below is a "person + object" example:  
-![Person + Object](https://qianwen-res.oss-cn-beijing.aliyuncs.com/Qwen-Image/edit2509/幻灯片21.JPG#center)
+**Built-in Support for Community-Created LoRAs**
+Since Qwen-Image-Edit’s release, the community has developed many creative and high-quality LoRAs—greatly expanding its expressive potential. Qwen-Image-Edit-2511 integrates selected popular LoRAs directly into the base model, unlocking their effects without extra tuning.
 
-In fact, multi-image input also supports commonly used ControlNet keypoint maps—for example, changing a person’s pose:  
-![Keypoint Pose Change](https://qianwen-res.oss-cn-beijing.aliyuncs.com/Qwen-Image/edit2509/幻灯片22.JPG#center)
+For example, Lighting Enhancement LoRA
+Realistic lighting control is now achievable out-of-the-box:
+![](https://qianwen-res.oss-cn-beijing.aliyuncs.com/Qwen-Image/edit2511/幻灯片7.JPG#center)
 
-Similarly, the following examples demonstrate results using three input images:  
-![Three Images 1](https://qianwen-res.oss-cn-beijing.aliyuncs.com/Qwen-Image/edit2509/幻灯片23.JPG#center)  
-![Three Images 2](https://qianwen-res.oss-cn-beijing.aliyuncs.com/Qwen-Image/edit2509/幻灯片24.JPG#center)  
-![Three Images 3](https://qianwen-res.oss-cn-beijing.aliyuncs.com/Qwen-Image/edit2509/幻灯片25.JPG#center)
+![](https://qianwen-res.oss-cn-beijing.aliyuncs.com/Qwen-Image/edit2511/幻灯片8.JPG#center)
 
----
+Another example, generating new viewpoints can now be done directly with the base model:
 
-**Another major update in Qwen-Image-Edit-2509 is enhanced consistency.**
+![](https://qianwen-res.oss-cn-beijing.aliyuncs.com/Qwen-Image/edit2511/幻灯片9.JPG#center)
 
-First, regarding person consistency, Qwen-Image-Edit-2509 shows significant improvement over Qwen-Image-Edit. Below are examples generating various portrait styles:  
-![Portrait Styles](https://qianwen-res.oss-cn-beijing.aliyuncs.com/Qwen-Image/edit2509/幻灯片1.JPG#center)
+![](https://qianwen-res.oss-cn-beijing.aliyuncs.com/Qwen-Image/edit2511/幻灯片10.JPG#center)
 
-For instance, changing a person’s pose while maintaining excellent identity consistency:  
-![Pose Change with Identity](https://qianwen-res.oss-cn-beijing.aliyuncs.com/Qwen-Image/edit2509/幻灯片2.JPG#center)
+**Industrial Design Applications**
 
-Leveraging this improvement along with Qwen-Image’s unique text rendering capability, we find that Qwen-Image-Edit-2509 excels at creating meme images:  
-![Meme Generation](https://qianwen-res.oss-cn-beijing.aliyuncs.com/Qwen-Image/edit2509/幻灯片3.JPG#center)
+We’ve paid special attention to practical engineering scenarios—for instance, batch industrial product design:
 
-Of course, even with longer text, Qwen-Image-Edit-2509 can still render it while preserving the person’s identity:  
-![Long Text with Identity](https://qianwen-res.oss-cn-beijing.aliyuncs.com/Qwen-Image/edit2509/幻灯片4.JPG#center)
 
-Person consistency is also evident in old photo restoration. Below are two examples:  
-![Old Photo Restoration 1](https://qianwen-res.oss-cn-beijing.aliyuncs.com/Qwen-Image/edit2509/幻灯片17.JPG#center)  
-![Old Photo Restoration 2](https://qianwen-res.oss-cn-beijing.aliyuncs.com/Qwen-Image/edit2509/幻灯片18.JPG#center)
+![](https://qianwen-res.oss-cn-beijing.aliyuncs.com/Qwen-Image/edit2511/幻灯片11.JPG#center)
 
-Naturally, besides real people, generating cartoon characters and cultural creations is also possible:  
-![Cartoon & Cultural Creation](https://qianwen-res.oss-cn-beijing.aliyuncs.com/Qwen-Image/edit2509/幻灯片15.JPG#center)
+![](https://qianwen-res.oss-cn-beijing.aliyuncs.com/Qwen-Image/edit2511/幻灯片12.JPG#center)
 
-Second, Qwen-Image-Edit-2509 specifically enhances product consistency. We find that the model can naturally generate product posters from plain-background product images:  
-![Product Poster](https://qianwen-res.oss-cn-beijing.aliyuncs.com/Qwen-Image/edit2509/幻灯片5.JPG#center)
+…and material replacement for industrial components:
+![](https://qianwen-res.oss-cn-beijing.aliyuncs.com/Qwen-Image/edit2511/幻灯片13.JPG#center)
 
-Or even simple logos:  
-![Logo Generation](https://qianwen-res.oss-cn-beijing.aliyuncs.com/Qwen-Image/edit2509/幻灯片16.JPG#center)
+![](https://qianwen-res.oss-cn-beijing.aliyuncs.com/Qwen-Image/edit2511/幻灯片14.JPG#center)
 
-Third, Qwen-Image-Edit-2509 specifically enhances text consistency and supports editing font type, font color, and font material:  
-![Font Type](https://qianwen-res.oss-cn-beijing.aliyuncs.com/Qwen-Image/edit2509/幻灯片10.JPG#center)  
-![Font Color](https://qianwen-res.oss-cn-beijing.aliyuncs.com/Qwen-Image/edit2509/幻灯片11.JPG#center)  
-![Font Material](https://qianwen-res.oss-cn-beijing.aliyuncs.com/Qwen-Image/edit2509/幻灯片12.JPG#center)
+**Enhanced Geometric Reasoning**
+Qwen-Image-Edit-2511 introduces stronger geometric reasoning capability—e.g., directly generating auxiliary construction lines for design or annotation purposes:
 
-Moreover, the ability for precise text editing has been significantly enhanced:  
-![Precise Text Editing 1](https://qianwen-res.oss-cn-beijing.aliyuncs.com/Qwen-Image/edit2509/幻灯片13.JPG#center)  
-![Precise Text Editing 2](https://qianwen-res.oss-cn-beijing.aliyuncs.com/Qwen-Image/edit2509/幻灯片14.JPG#center)
 
-It is worth noting that text editing can often be seamlessly integrated with image editing—for example, in this poster editing case:  
-![Poster Editing](https://qianwen-res.oss-cn-beijing.aliyuncs.com/Qwen-Image/edit2509/幻灯片6.JPG#center)
+![](https://qianwen-res.oss-cn-beijing.aliyuncs.com/Qwen-Image/edit2511/幻灯片15.JPG#center)
 
----
-
-**The final update in Qwen-Image-Edit-2509 is native support for commonly used ControlNet image conditions, such as keypoint control and sketches:**  
-![Keypoint Control](https://qianwen-res.oss-cn-beijing.aliyuncs.com/Qwen-Image/edit2509/幻灯片7.JPG#center)  
-![Sketch Input 1](https://qianwen-res.oss-cn-beijing.aliyuncs.com/Qwen-Image/edit2509/幻灯片8.JPG#center)  
-![Sketch Input 2](https://qianwen-res.oss-cn-beijing.aliyuncs.com/Qwen-Image/edit2509/幻灯片9.JPG#center)
-
----
-
-The above summarizes the main enhancements in this update. We hope you enjoy using Qwen-Image-Edit-2509!
-
+![](https://qianwen-res.oss-cn-beijing.aliyuncs.com/Qwen-Image/edit2511/幻灯片16.JPG#center)
 
 
 
@@ -357,6 +379,17 @@ Diffusers has supported Qwen-Image since day 0. Support for LoRA and finetuning 
 * **[ModelScope AIGC Central](https://www.modelscope.cn/aigc)** provides hands-on experiences on Qwen Image, including: 
     - [Image Generation](https://www.modelscope.cn/aigc/imageGeneration): Generate high fidelity images using the Qwen Image model.
     - [LoRA Training](https://www.modelscope.cn/aigc/modelTraining): Easily train Qwen Image LoRAs for personalized concepts.
+
+### SGLang
+
+**SGLang-Diffusion** provides day-0 support for Qwen-Image models. To play with `Qwen-Image-Edit-2511`, use the following command:
+
+```
+sglang generate --model-path Qwen/Qwen-Image-Edit-2511 --prompt "make the girl in Figure 1 dance with the capybara in Figure 2."  --image-path "https://github.com/lm-sys/lm-sys.github.io/releases/download/test/TI2I_Qwen_Image_Edit_Input.jpg" "https://qianwen-res.oss-cn-beijing.aliyuncs.com/Qwen-Image/edit2509/edit2509_2.jpg"
+```
+
+The output should be like
+![](https://github.com/lm-sys/lm-sys.github.io/releases/download/test/SGLang_Diffusion_Qwen_Image_Edit_2511_example_output.jpg )
 
 ### WaveSpeedAI
 
