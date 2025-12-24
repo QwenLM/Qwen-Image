@@ -20,7 +20,7 @@ We are thrilled to release **Qwen-Image**, a 20B MMDiT image foundation model th
 
 ## News
 - 2025.12.23: We released Qwen-Image-Edit-2511 weights! Check at [Huggingface](https://huggingface.co/Qwen/Qwen-Image-Edit-2511) and [ModelScope](https://modelscope.cn/models/Qwen/Qwen-Image-Edit-2511)!
-- 2025.12.23: We released Qwen-Image-Edit-2511! Check our [Blog](https://qwenlm.github.io/blog/qwen-image-edit-2511) for more details!
+- 2025.12.23: We released Qwen-Image-Edit-2511! Check our [Blog](https://qwen.ai/blog?id=qwen-image-edit-2511) for more details!
 - 2025.12.23: **[LightX2V](https://github.com/ModelTC/LightX2V/)** delivers Day 0 acceleration for Qwen-Image-Edit-2511, with native support for a wide range of hardware, including **NVIDIA, Hygon, Metax, Ascend, and Cambricon**. By combining **[diffusion distillation](https://github.com/ModelTC/Qwen-Image-Lightning)** with cutting-edge inference optimizations, LightX2V achieves a **25x reduction in DiT NFEs** and **an order-of-magnitude 42.55x overall speedup**, enabling real-time image editing across diverse AI accelerators.
 - 2025.12.23: **vLLM-Omni** supports high performance `Qwen-Image-Edit-2511`, `Qwen-Image-Layered` inference from Day-0, with long sequence parallelism, cache acceleration and fast kernels, please check [here](https://github.com/vllm-project/vllm-omni/tree/main/examples/offline_inference/image_to_image) for details.
 
