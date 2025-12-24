@@ -77,7 +77,7 @@ from diffusers import QwenImageEditPlusPipeline
 from io import BytesIO
 import requests
 
-pipeline = QwenImageEditPlusPipeline.from_pretrained("Qwen/Qwen-Image-Edit-2509", torch_dtype=torch.bfloat16)
+pipeline = QwenImageEditPlusPipeline.from_pretrained("Qwen/Qwen-Image-Edit-2511", torch_dtype=torch.bfloat16)
 print("pipeline loaded")
 
 pipeline.to('cuda')
