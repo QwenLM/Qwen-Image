@@ -568,9 +568,9 @@ WaveSpeed has deployed Qwen-Image on their platform from day 0, visit their [mod
 
 LiblibAI offers native support for Qwen-Image from day 0. Visit their [community](https://www.liblib.art/modelinfo/c62a103bd98a4246a2334e2d952f7b21?from=sd&versionUuid=75e0be0c93b34dd8baeec9c968013e0c) page for more details and discussions.
 
-### Inference Acceleration Method: cache-dit
+### Inference Acceleration Method: Cache-DiT
 
-cache-dit offers cache acceleration support for Qwen-Image with DBCache, TaylorSeer and Cache CFG. Visit their [example](https://github.com/vipshop/cache-dit/blob/main/examples/pipeline/run_qwen_image.py) for more details.
+[Cache-DiT](https://github.com/vipshop/cache-dit) provides inference acceleration for Qwen-Image via DBCache, Context Parallelism and Tensor Parallelism. Please visit their [example](https://github.com/vipshop/cache-dit/blob/main/examples) for more details.
 
 ## License Agreement
 
@@ -605,6 +605,7 @@ If you're passionate about fundamental research, we're hiring full-time employee
 ## Star History
 
 [![Star History Chart](https://api.star-history.com/svg?repos=QwenLM/Qwen-Image&type=Date)](https://www.star-history.com/#QwenLM/Qwen-Image&Date)
+
 
 
 
