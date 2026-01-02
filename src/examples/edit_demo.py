@@ -10,9 +10,13 @@ from tools.prompt_utils import polish_edit_prompt
 # --- Model Loading ---
 dtype = torch.bfloat16
 device = "cuda" if torch.cuda.is_available() else "cpu"
+model = "Qwen/Qwen-Image-Edit"
 
 # Load the model pipeline
-pipe = QwenImageEditPipeline.from_pretrained("Qwen/Qwen-Image-Edit", torch_dtype=dtype).to(device)
+if torch.cuda.device_count() >1:
+    pipe = QwenImageEditPipeline.from_pretrained(model, torch_dtype=dtype, device_map="balanced")
+else:
+    pipe = QwenImageEditPipeline.from_pretrained(model, torch_dtype=dtype).to(device)
 
 # --- UI Constants and Helpers ---
 MAX_SEED = np.iinfo(np.int32).max
