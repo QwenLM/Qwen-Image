@@ -19,6 +19,7 @@ We are thrilled to release **Qwen-Image**, a 20B MMDiT image foundation model th
 ![](https://qianwen-res.oss-cn-beijing.aliyuncs.com/Qwen-Image/bench.png#center)
 
 ## News
+- 2026.01.05: [LeMiCa](https://github.com/UnicomAI/LeMiCa) now enables Qwen-Image-2512 for training-free acceleration and supports ComfyUI. Check [here](https://github.com/UnicomAI/LeMiCa/tree/main/LeMiCa4QwenImage) for details.
 - 2025.12.31: We released Qwen-Image-2512 weights! Check at [Huggingface](https://huggingface.co/Qwen/Qwen-Image-2512) and [ModelScope](https://modelscope.cn/models/Qwen/Qwen-Image-2512)!
 - 2025.12.31: We released Qwen-Image-2512! Check our [Blog](https://qwen.ai/blog?id=qwen-image-2512) for more details!
     🚀 Our December upgrade to Qwen-Image, just in time for the New Year.
