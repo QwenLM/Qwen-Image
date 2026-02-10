@@ -312,7 +312,7 @@ def initialize_gpu_manager():
 gpu_manager = None
 
 
-# (1664, 928), (1472, 1140), (1328, 1328)
+# (1664, 928), (1472, 1104), (1328, 1328)
 def get_image_size(aspect_ratio):
     if aspect_ratio == "1:1":
         return 1328, 1328
@@ -321,9 +321,9 @@ def get_image_size(aspect_ratio):
     elif aspect_ratio == "9:16":
         return 928, 1664
     elif aspect_ratio == "4:3":
-        return 1472, 1140
+        return 1472, 1104
     elif aspect_ratio == "3:4":
-        return 1140, 1472
+        return 1104, 1472
     else:
         return 1328, 1328
 
