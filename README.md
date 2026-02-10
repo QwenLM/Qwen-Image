@@ -19,6 +19,13 @@ We are thrilled to release **Qwen-Image**, a 20B MMDiT image foundation model th
 ![](https://qianwen-res.oss-cn-beijing.aliyuncs.com/Qwen-Image/bench.png#center)
 
 ## News
+- 2026.02.10: We are launching Qwen-Image-2.0, a next-generation foundational image generation model. The key highlights of Qwen-Image-2.0 include:
+
+    * **Professional Typography Rendering** – Supports 1k-token instructions for direct generation of professional infographics, including PPTs, posters, comics, and more.
+    * **Stronger Semantic Adherence** – Native 2K resolution support for finely detailed realistic scenes, including people, nature, and architecture.
+    * **Improved Text Rendering** – Integrated understanding and generation capabilities, unifying image generation and editing in a single mode
+    * **Lighter Model Architecture**  – Smaller model size with faster inference speed.
+Check our [Blog](https://qwen.ai/blog?id=qwen-image-2.0) for more details! Also give it a try at [Qwen Chat](https://chat.qwen.ai/?inputFeature=t2i).
 - 2025.12.31: We released Qwen-Image-2512 weights! Check at [Huggingface](https://huggingface.co/Qwen/Qwen-Image-2512) and [ModelScope](https://modelscope.cn/models/Qwen/Qwen-Image-2512)!
 - 2025.12.31: We released Qwen-Image-2512! Check our [Blog](https://qwen.ai/blog?id=qwen-image-2512) for more details!
     🚀 Our December upgrade to Qwen-Image, just in time for the New Year.
