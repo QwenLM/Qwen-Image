@@ -47,7 +47,7 @@ Check our [Blog](https://qwen.ai/blog?id=qwen-image-2.0) for more details! Also 
 - 2025.12.23: **SGLang-Diffusion** provides day-0 support for Qwen-Image models. To play with `Qwen-Image-Edit-2511` in SGlang, please check community supports section for details.
 
 - 2025.12.19: We released Qwen-Image-Layered weights! Check at [Huggingface](https://huggingface.co/Qwen/Qwen-Image-Layered) and [ModelScope](https://modelscope.cn/models/Qwen/Qwen-Image-Layered)!
-- 2025.12.19: We released Qwen-Image-Layered! Check our [Blog](https://qwenlm.github.io/blog/qwen-image-layered) for more details!
+- 2025.12.19: We released Qwen-Image-Layered! Check our [Blog](https://qwen.ai/blog?id=qwen-image-layered) for more details!
 - 2025.12.18: We released our [Research Paper](https://arxiv.org/abs/2512.15603) on Arxiv!
 - 2025.11.11: **[T2I-CoreBench](https://t2i-corebench.github.io/)** offers a comprehensive and complex evaluation of T2I models in real-world scenarios. On this benchmark, Qwen-Image achieves state-of-the-art performance under real-world complexities in both composition and reasoning T2I tasks, surpassing other open-source models and showing comparable results to closed-source ones.
 - 2025.11.07: LeMiCa is a diffusion model inference acceleration solution developed by China Unicom Data Science and Artificial Intelligence Research Institute. By leveraging cache-based techniques and global denoising path optimization, LeMiCa provides efficient inference support for Qwen-Image, achieving nearly 3x lossless acceleration while maintaining visual consistency and quality. For more details, please visit the homepage: [https://unicomai.github.io/LeMiCa/](https://unicomai.github.io/LeMiCa/)
@@ -612,6 +612,7 @@ If you're passionate about fundamental research, we're hiring full-time employee
 ## Star History
 
 [![Star History Chart](https://api.star-history.com/svg?repos=QwenLM/Qwen-Image&type=Date)](https://www.star-history.com/#QwenLM/Qwen-Image&Date)
+
 
 
 
