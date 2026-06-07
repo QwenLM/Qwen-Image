@@ -19,6 +19,7 @@ We are thrilled to release **Qwen-Image**, a 20B MMDiT image foundation model th
 ![](https://qianwen-res.oss-cn-beijing.aliyuncs.com/Qwen-Image/bench.png#center)
 
 ## News
+- 2026.06.06: **[VDE](https://github.com/Tan-Junwen/VDE)** is a training-free rectified flow inference acceleration solution proposed in CVPR 2026. By leveraging velocity decomposition and estimation, VDE provides efficient inference support for Qwen-Image, achieving 2~3× acceleration while maintaining high visual consistency and generation quality. For more details, please visit the homepage: [https://github.com/Tan-Junwen/VDE](https://github.com/Tan-Junwen/VDE)
 - 2026.02.10: We are launching Qwen-Image-2.0, a next-generation foundational image generation model. The key highlights of Qwen-Image-2.0 include:
 
     * **Professional Typography Rendering** – Supports 1k-token instructions for direct generation of professional infographics, including PPTs, posters, comics, and more.
