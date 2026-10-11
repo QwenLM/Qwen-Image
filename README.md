@@ -575,6 +575,10 @@ WaveSpeed has deployed Qwen-Image on their platform from day 0, visit their [mod
 
 LiblibAI offers native support for Qwen-Image from day 0. Visit their [community](https://www.liblib.art/modelinfo/c62a103bd98a4246a2334e2d952f7b21?from=sd&versionUuid=75e0be0c93b34dd8baeec9c968013e0c) page for more details and discussions.
 
+### Image to Image
+
+[Image to Image](https://imagetoimage.dev/) is a third-party browser photo editor using Qwen-Image-Edit through fal.ai. Users can refine an edit brief in chat, compare the original with generated versions, and download the reviewed result. Its [tested product-background example](https://imagetoimage.dev/image-to-image/product-photo-background#real-example) publishes the input, prompt, output, and subject-preservation limitations.
+
 ### Inference Acceleration Method: cache-dit
 
 cache-dit offers cache acceleration support for Qwen-Image with DBCache, TaylorSeer and Cache CFG. Visit their [example](https://github.com/vipshop/cache-dit/blob/main/examples/pipeline/run_qwen_image.py) for more details.
