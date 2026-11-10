@@ -22,7 +22,8 @@ from errors import QueueFull, ServiceError
 from protocol import Result, Task, WorkerEvent
 
 # op -> 分配到的 GPU 编号。改容量只改这张表。
-GPU_ASSIGNMENT: dict[str, list[int]] = {"t2i": [0], "edit": [1]}
+# t2i 使用 1/4/5/6/7（5 路并发）；edit 仍独占一张卡，挪到 0 避免和 t2i 抢同一张。
+GPU_ASSIGNMENT: dict[str, list[int]] = {"t2i": [1, 4, 5, 6, 7], "edit": [0]}
 
 QUEUE_DEPTH_PER_GPU = 2
 

@@ -22,8 +22,8 @@ API 启动后立即监听，权重在 worker 子进程中异步加载；两个 w
 
 | GPU | op | 模型 |
 |---|---|---|
-| 0 | t2i | `Qwen/Qwen-Image` |
-| 1 | edit | `Qwen/Qwen-Image-Edit` |
+| 1, 4, 5, 6, 7 | t2i | `Qwen/Qwen-Image` |
+| 0 | edit | `Qwen/Qwen-Image-Edit` |
 
 修改 `pool.GPU_ASSIGNMENT` 可以调整卡位。部署机也可以通过 `T2I_REPO` 和 `EDIT_REPO` 覆盖模型路径。
 
