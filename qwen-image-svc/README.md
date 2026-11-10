@@ -27,7 +27,43 @@ API 启动后立即监听，权重在 worker 子进程中异步加载；两个 w
 
 修改 `pool.GPU_ASSIGNMENT` 可以调整卡位。部署机也可以通过 `T2I_REPO` 和 `EDIT_REPO` 覆盖模型路径。
 
-## 原生接口
+## DashScope 兼容接口
+
+服务可以使用本地部署的模型提供 DashScope 风格的同步接口，不会请求 DashScope 云端：
+
+```text
+POST /api/v1/services/aigc/multimodal-generation/generation
+```
+
+请求使用 DashScope 的 `model`、`input.messages` 和 `parameters` 字段。模型名映射到本地 worker：
+
+- `qwen-image-plus`、`qwen-image-2.0`：本地文生图模型
+- `qwen-image-edit-plus`：本地图像编辑模型
+
+```bash
+curl -s http://127.0.0.1:8000/api/v1/services/aigc/multimodal-generation/generation \\
+  -H "Authorization: Bearer $SVC_TOKEN" \\
+  -H 'Content-Type: application/json' \\
+  -d '{
+    "model": "qwen-image-plus",
+    "input": {
+      "messages": [{
+        "role": "user",
+        "content": [{"text": "一只穿西装的卡皮巴拉"}]
+      }]
+    },
+    "parameters": {
+      "size": "1664*928",
+      "n": 1,
+      "seed": 42
+    }
+  }'
+```
+
+响应格式为 DashScope 风格，图片实际由本服务的 `/files/` 提供。若服务通过反向代理暴露，设置 `SVC_PUBLIC_BASE_URL` 为外部可访问的完整地址，避免返回相对 URL。
+
+图像编辑时，在同一个 `content` 数组中传入 `image` 和 `text`；图片支持 `data:image/...;base64,...`，或可访问的公网 HTTP(S) URL。远程图片仅允许解析到公网地址，单张最大 10 MiB。
+
 
 同步和异步请求使用相同的请求体。`model` 是唯一的模型分派字段：
 

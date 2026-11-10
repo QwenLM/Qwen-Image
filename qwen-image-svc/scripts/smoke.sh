@@ -12,7 +12,7 @@ ok()   { printf '  \033[32mPASS\033[0m %s\n' "$1"; }
 fail() { printf '  \033[31mFAIL\033[0m %s\n' "$1"; exit 1; }
 code() { curl -s -o /dev/null -w '%{http_code}' "$@"; }
 
-printf '%s\n' '== 1. 健康与兼容路由移除'
+printf '%s\n' '== 1. 健康与兼容路由'
 [ "$(code "$BASE/healthz")" = "200" ] && ok "healthz" || fail "healthz"
 [ "$(code "$BASE/v1/images/generations")" = "404" ] \
   && ok "OpenAI 兼容路由不存在" || fail "兼容路由不应存在"
@@ -67,7 +67,23 @@ edit=$(curl -s -X POST "$BASE/generate" "${AUTH[@]}" "${JSON[@]}" \
 [ "$(printf '%s' "$edit" | jq -r '.images[0].seed')" = "9" ] \
   && ok "edit 使用原生 images 参数" || fail "edit 请求失败: $edit"
 
-printf '%s\n' '== 6. 异步任务'
+printf '%s\n' '== 6. DashScope 兼容同步接口'
+dashscope=$(curl -s -w '\\n%{http_code}' -X POST \\
+  "$BASE/api/v1/services/aigc/multimodal-generation/generation" \\
+  "${AUTH[@]}" "${JSON[@]}" \\
+  -d '{
+    "model":"qwen-image-plus",
+    "input":{"messages":[{"role":"user","content":[{"text":"dashscope smoke"}]}]},
+    "parameters":{"size":"1664*928","n":2,"seed":11,"num_inference_steps":10}
+  }')
+body=$(printf '%s\n' "$dashscope" | sed '$d'); status=$(printf '%s\n' "$dashscope" | tail -n1)
+[ "$status" = "200" ] && ok "DashScope 入口 -> 200" || fail "DashScope 入口 -> $status: $body"
+count=$(printf '%s' "$body" | jq '.output.choices[0].message.content | length')
+[ "$count" = "2" ] && ok "DashScope 返回 2 张图" || fail "DashScope 期望 2 张，实际 $count"
+url=$(printf '%s' "$body" | jq -r '.output.choices[0].message.content[0].image')
+[ "$(code "$url")" = "200" ] && ok "DashScope 图片 URL 可下载" || fail "DashScope 图片 URL 下载失败"
+
+printf '%s\n' '== 7. 异步任务'
 job=$(curl -s -X POST "$BASE/jobs" "${AUTH[@]}" "${JSON[@]}" \
   -d '{
     "model":"qwen-image",

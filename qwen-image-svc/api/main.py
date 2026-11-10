@@ -13,6 +13,7 @@ from contextlib import asynccontextmanager
 from typing import Optional
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, PlainTextResponse, Response
 
 from blobs import BlobStore
@@ -26,14 +27,22 @@ from protocol import (
     ImageRequest,
     JobAccepted,
     JobStatus,
-    now,
+)
+from qwen_image_dashscope import (
+    DashScopeError,
+    DashScopeRequest,
+    DashScopeResponse,
+    from_job as dashscope_response,
+    to_task as dashscope_task,
 )
 
 AUTH_TOKEN = os.environ.get("SVC_TOKEN", "")
 DATA_DIR = os.environ.get("SVC_DATA_DIR", "./data")
+PUBLIC_BASE_URL = os.environ.get("SVC_PUBLIC_BASE_URL", "").rstrip("/")
 QUEUE_DEADLINE = float(os.environ.get("SVC_QUEUE_DEADLINE", "120"))
 INFER_TIMEOUT = float(os.environ.get("SVC_INFER_TIMEOUT", "300"))
 JOB_TTL = int(os.environ.get("SVC_JOB_TTL", str(24 * 3600)))
+DASHSCOPE_PATH = "/api/v1/services/aigc/multimodal-generation/generation"
 
 _BLOB_NAME = re.compile(r"^[0-9a-f]{64}\.png$")
 
@@ -70,23 +79,73 @@ def require_token(authorization: Optional[str] = Header(default=None)) -> None:
         raise Unauthorized("missing or invalid bearer token")
 
 
+def _is_dashscope(request: Request) -> bool:
+    return request.url.path == DASHSCOPE_PATH
+
+
+def _dashscope_error(status: int, code: str, message: str) -> JSONResponse:
+    body = DashScopeError(
+        code=code,
+        message=message,
+        request_id=secrets.token_hex(16),
+    )
+    return JSONResponse(body.model_dump(), status_code=status)
+
+
+def _dashscope_error_code(status: int) -> str:
+    return {
+        400: "InvalidParameter",
+        401: "InvalidApiKey",
+        404: "NotFound",
+        429: "Throttling",
+        503: "ServiceUnavailable",
+        504: "Timeout",
+    }.get(status, "InternalError")
+
+
 @app.exception_handler(ServiceError)
-async def _service_error(_: Request, exc: ServiceError) -> JSONResponse:
+async def _service_error(request: Request, exc: ServiceError) -> JSONResponse:
     headers = {}
     if exc.retry_after:
         headers["Retry-After"] = str(exc.retry_after)
+    if _is_dashscope(request):
+        response = _dashscope_error(
+            exc.status,
+            _dashscope_error_code(exc.status),
+            exc.message,
+        )
+        response.headers.update(headers)
+        return response
     body = ErrorBody(message=exc.message, type=exc.type, code=str(exc.status))
     return JSONResponse(body.model_dump(), status_code=exc.status, headers=headers)
 
 
+@app.exception_handler(RequestValidationError)
+async def _validation_error(request: Request, _: RequestValidationError) -> JSONResponse:
+    if _is_dashscope(request):
+        return _dashscope_error(400, "InvalidParameter", "request validation failed")
+    return JSONResponse(
+        ErrorBody(message="request validation failed", code="422").model_dump(),
+        status_code=422,
+    )
+
+
 @app.exception_handler(HTTPException)
-async def _http_error(_: Request, exc: HTTPException) -> JSONResponse:
+async def _http_error(request: Request, exc: HTTPException) -> JSONResponse:
+    if _is_dashscope(request):
+        return _dashscope_error(
+            exc.status_code,
+            _dashscope_error_code(exc.status_code),
+            str(exc.detail),
+        )
     body = ErrorBody(message=str(exc.detail), code=str(exc.status_code))
     return JSONResponse(body.model_dump(), status_code=exc.status_code)
 
 
 @app.exception_handler(Exception)
-async def _unhandled(_: Request, exc: Exception) -> JSONResponse:
+async def _unhandled(request: Request, _: Exception) -> JSONResponse:
+    if _is_dashscope(request):
+        return _dashscope_error(500, "InternalError", "internal error")
     body = ErrorBody(message="internal error", type="internal_error", code="500")
     return JSONResponse(body.model_dump(), status_code=500)
 
@@ -109,6 +168,26 @@ def _job_payload(job) -> JobStatus:
         elapsed_ms=job.elapsed_ms,
         error=job.error,
     )
+
+
+# ------------------------------------------------------------------ DashScope 兼容路由
+
+@app.post(
+    DASHSCOPE_PATH,
+    response_model=DashScopeResponse,
+    dependencies=[Depends(require_token)],
+)
+def dashscope_generate(
+    req: DashScopeRequest,
+    request: Request,
+) -> DashScopeResponse:
+    """使用本地 Qwen worker 提供 DashScope 同步响应格式。"""
+    job = app.state.jobs.submit(dashscope_task(req))
+    job = app.state.jobs.wait(job)
+    if job.status != "succeeded":
+        raise _failed(job)
+    base_url = PUBLIC_BASE_URL or str(request.base_url).rstrip("/")
+    return dashscope_response(job, public_base_url=base_url)
 
 
 # ------------------------------------------------------------------ Qwen 原生路由
