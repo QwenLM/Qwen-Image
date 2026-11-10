@@ -2,7 +2,6 @@ import gradio as gr
 import numpy as np
 import random
 import torch
-import spaces
 
 from diffusers import QwenImageEditPlusPipeline
 from tools.prompt_utils import polish_edit_prompt
@@ -23,7 +22,6 @@ pipe = QwenImageEditPlusPipeline.from_pretrained(
 MAX_SEED = np.iinfo(np.int32).max
 
 # --- Main Inference Function (with hardcoded negative prompt) ---
-@spaces.GPU(duration=300)
 def infer(
     image,
     prompt,
@@ -31,7 +29,7 @@ def infer(
     randomize_seed=False,
     true_guidance_scale=1.0,
     num_inference_steps=50,
-    rewrite_prompt=True,
+    rewrite_prompt=False,
     num_images_per_prompt=1,
     progress=gr.Progress(track_tqdm=True),
 ):
@@ -137,7 +135,7 @@ with gr.Blocks(css=css) as demo:
                     value=1,
                 )
                 
-                rewrite_prompt = gr.Checkbox(label="Rewrite prompt", value=True)
+                rewrite_prompt = gr.Checkbox(label="Rewrite prompt", value=False)
 
         # gr.Examples(examples=examples, inputs=[prompt], outputs=[result, seed], fn=infer, cache_examples=False)
 
@@ -158,4 +156,4 @@ with gr.Blocks(css=css) as demo:
     )
 
 if __name__ == "__main__":
-    demo.launch()
+    demo.launch(server_name="0.0.0.0")
