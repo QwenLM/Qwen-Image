@@ -1,9 +1,14 @@
 from diffusers import DiffusionPipeline
 from tools.prompt_utils import rewrite
+from model_paths import QWEN_IMAGE_MODEL
 import torch
 
-# Initialize the pipeline
-pipe = DiffusionPipeline.from_pretrained("Qwen/Qwen-Image", torch_dtype=torch.bfloat16)
+# Initialize the pipeline from local weights
+pipe = DiffusionPipeline.from_pretrained(
+    QWEN_IMAGE_MODEL,
+    torch_dtype=torch.bfloat16,
+    local_files_only=True,
+)
 pipe = pipe.to("cuda")
 
 # Generate with different aspect ratios

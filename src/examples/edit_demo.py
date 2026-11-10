@@ -4,15 +4,20 @@ import random
 import torch
 import spaces
 
-from diffusers import QwenImageEditPipeline
+from diffusers import QwenImageEditPlusPipeline
 from tools.prompt_utils import polish_edit_prompt
+from model_paths import QWEN_IMAGE_EDIT_MODEL
 
 # --- Model Loading ---
 dtype = torch.bfloat16
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
-# Load the model pipeline
-pipe = QwenImageEditPipeline.from_pretrained("Qwen/Qwen-Image-Edit", torch_dtype=dtype).to(device)
+# Load the model pipeline from local weights (Qwen-Image-Edit-2511)
+pipe = QwenImageEditPlusPipeline.from_pretrained(
+    QWEN_IMAGE_EDIT_MODEL,
+    torch_dtype=dtype,
+    local_files_only=True,
+).to(device)
 
 # --- UI Constants and Helpers ---
 MAX_SEED = np.iinfo(np.int32).max
@@ -49,15 +54,16 @@ def infer(
         prompt = polish_edit_prompt(prompt, image)
         print(f"Rewritten Prompt: {prompt}")
 
-    # Generate the image
+    # Generate the image (Edit-2511 expects a list of images)
     image = pipe(
-        image,
+        image=[image],
         prompt=prompt,
         negative_prompt=negative_prompt,
         num_inference_steps=num_inference_steps,
         generator=generator,
         true_cfg_scale=true_guidance_scale,
-        num_images_per_prompt=num_images_per_prompt
+        guidance_scale=1.0,
+        num_images_per_prompt=num_images_per_prompt,
     ).images
 
     return image, seed
