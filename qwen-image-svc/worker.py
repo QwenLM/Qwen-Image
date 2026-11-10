@@ -116,60 +116,59 @@ class ModelHost:
             )
 
     def _generate(self, task: Task) -> list[Any]:
-        # n>1 走串行循环，绝不传 num_images_per_prompt=n。
-        # 80 GiB 卡装完 ~60 GiB 权重只剩 ~20 GiB，n 份激活值同时
-        # 铺开会 OOM；串行只是慢 n 倍，但稳定。
+        # num_images_per_prompt 仍按请求保留；为控制显存，实际逐张执行。
         base_seed = task.seed
         out: list[Any] = []
-        for i in range(task.n):
-            seed = None if base_seed is None else base_seed + i
-            gen = self._torch.Generator(device=self.device).manual_seed(
-                seed if seed is not None else self._torch.seed()
-            )
+        for i in range(task.num_images_per_prompt):
+            seed = base_seed + i
+            gen = self._torch.Generator(device=self.device).manual_seed(seed)
             common = dict(
                 prompt=task.prompt,
-                negative_prompt=task.negative_prompt or " ",
-                num_inference_steps=task.steps,
-                true_cfg_scale=task.guidance,
-                guidance_scale=1.0,
+                negative_prompt=task.negative_prompt,
+                num_inference_steps=task.num_inference_steps,
+                true_cfg_scale=task.true_cfg_scale,
+                guidance_scale=task.guidance_scale,
                 num_images_per_prompt=1,
                 generator=gen,
             )
             if self.op == "t2i":
                 image = self._pipe(
-                    width=task.width, height=task.height, **common
+                    width=task.width,
+                    height=task.height,
+                    **common,
                 ).images[0]
             else:
-                if not task.image_b64:
+                if not task.images_b64:
                     raise ValueError("edit task requires at least one input image")
                 image = self._pipe(
-                    image=_decode_images(task.image_b64), **common
+                    image=_decode_images(task.images_b64),
+                    **common,
                 ).images[0]
             out.append(image)
         return out
 
     def _fake_generate(self, task: Task) -> list[Any]:
-        """画一张纯色图并把关键参数印在上面，用于链路验证。
-
-        刻意把 w/h/seed/op 印在图上：拉回图片就能肉眼确认
-        尺寸 preset 映射和 seed 递增是对的，不用翻日志。
-        """
+        """画一张占位图，把关键参数印在图上用于链路验证。"""
         from PIL import Image, ImageDraw
 
+        width = task.width or 1024
+        height = task.height or 1024
         out = []
-        for i in range(task.n):
-            seed = task.seed + i if task.seed is not None else -1
-            im = Image.new("RGB", (task.width // 4, task.height // 4), (30, 30, 40))
+        for i in range(task.num_images_per_prompt):
+            seed = task.seed + i
+            im = Image.new("RGB", (width // 4, height // 4), (30, 30, 40))
             draw = ImageDraw.Draw(im)
             lines = [
                 f"FAKE {self.op}",
-                f"{task.width}x{task.height}",
+                f"{width}x{height}",
                 f"seed={seed}",
                 f"gpu={self.gpu_id}",
-                (task.prompt[:40] + "..." ) if len(task.prompt) > 40 else task.prompt,
+                (task.prompt[:40] + "...")
+                if len(task.prompt) > 40
+                else task.prompt,
             ]
-            for n, line in enumerate(lines):
-                draw.text((10, 10 + n * 14), line, fill=(240, 240, 240))
+            for index, line in enumerate(lines):
+                draw.text((10, 10 + index * 14), line, fill=(240, 240, 240))
             out.append(im)
         return out
 

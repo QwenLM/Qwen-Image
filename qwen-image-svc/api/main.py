@@ -1,7 +1,8 @@
-"""HTTP 薄壳：鉴权、路由、协议映射。不碰 torch。
+"""Qwen Image 原生 HTTP 服务。
 
-唯一的职责边界在于：这里出现的所有错误都必须来自 errors.py，
-handler 里不做「这是 400 还是 500」的判断。
+这里负责鉴权、路由、协议映射和结果组装，不 import torch。
+同步与异步接口共享同一个 JobStore；model 只用于选择 Qwen pipeline，
+不模拟 OpenAI 的 URL、字段或响应格式。
 """
 from __future__ import annotations
 
@@ -20,9 +21,9 @@ from jobs import JobStore
 from pool import WorkerPool
 from protocol import (
     ErrorBody,
-    ImageDatum,
+    GeneratedImage,
+    GenerateResponse,
     ImageRequest,
-    ImageResponse,
     JobAccepted,
     JobStatus,
     now,
@@ -40,8 +41,8 @@ _BLOB_NAME = re.compile(r"^[0-9a-f]{64}\.png$")
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     if not AUTH_TOKEN:
-        # 没有 token 就拒绝启动：对外开放的推理接口不该裸奔
         raise RuntimeError("SVC_TOKEN is required")
+
     blobs = BlobStore(f"{DATA_DIR}/blobs")
     pool = WorkerPool()
     app.state.blobs = blobs
@@ -53,8 +54,7 @@ async def lifespan(app: FastAPI):
         infer_timeout=INFER_TIMEOUT,
         ttl_seconds=JOB_TTL,
     )
-    # 不阻塞启动等待权重加载：/readyz 负责表达「能不能接流量」。
-    # 否则一个加载失败会变成进程起不来，运维看不到日志。
+    # 模型在 worker 子进程中异步加载，/readyz 负责表达是否可以接流量。
     yield
     app.state.jobs.close()
     pool.close()
@@ -93,66 +93,60 @@ async def _unhandled(_: Request, exc: Exception) -> JSONResponse:
 
 # ------------------------------------------------------------------ 响应组装
 
+def _images_from_job(job) -> list[GeneratedImage]:
+    return [
+        GeneratedImage(url=f"/files/{blob}", seed=seed)
+        for blob, seed in zip(job.blobs, job.seeds)
+    ]
+
+
 def _job_payload(job) -> JobStatus:
-    data = []
-    if job.status == "succeeded":
-        for blob, seed in zip(job.blobs, job.seeds):
-            data.append(_datum_from_format(job.response_format, blob, seed))
     return JobStatus(
         job_id=job.job_id,
         status=job.status,
         created=job.created,
-        data=data,
+        images=_images_from_job(job) if job.status == "succeeded" else [],
+        elapsed_ms=job.elapsed_ms,
         error=job.error,
     )
 
 
-def _datum_from_format(fmt: str, blob: str, seed: Optional[int]) -> ImageDatum:
-    if fmt == "b64_json":
-        import base64
-
-        return ImageDatum(
-            b64_json=base64.b64encode(app.state.blobs.get(blob)).decode(), seed=seed
-        )
-    return ImageDatum(url=f"/files/{blob}", seed=seed)
-
-
-# ------------------------------------------------------------------ 路由
+# ------------------------------------------------------------------ Qwen 原生路由
 
 @app.post(
-    "/v1/images/generations",
-    response_model=ImageResponse,
+    "/generate",
+    response_model=GenerateResponse,
     dependencies=[Depends(require_token)],
 )
-def generate(req: ImageRequest) -> ImageResponse:
-    """同步：阻塞到出图。客户端断连时 GPU 仍会跑完当前任务，
-    这是不可避免的损失；需要可取消就改用异步入口。"""
-    job = app.state.jobs.submit(req.to_task(), req.response_format)
+def generate(req: ImageRequest) -> GenerateResponse:
+    """同步执行文生图或图像编辑，由请求中的 model 选择 pipeline。"""
+    job = app.state.jobs.submit(req.to_task())
     job = app.state.jobs.wait(job)
-
     if job.status != "succeeded":
         raise _failed(job)
-
-    data = [_datum_from_format(req.response_format, b, s)
-            for b, s in zip(job.blobs, job.seeds)]
-    return ImageResponse(created=now(), data=data)
+    return GenerateResponse(
+        images=_images_from_job(job),
+        elapsed_ms=job.elapsed_ms or 0,
+    )
 
 
 @app.post(
-    "/v1/images/jobs", status_code=202,
+    "/jobs",
+    status_code=202,
     response_model=JobAccepted,
     dependencies=[Depends(require_token)],
 )
 def create_job(req: ImageRequest, request: Request) -> JobAccepted:
-    job = app.state.jobs.submit(req.to_task(), req.response_format)
+    """异步提交文生图或编辑任务。请求体与 /generate 完全一致。"""
+    job = app.state.jobs.submit(req.to_task())
     return JobAccepted(
         job_id=job.job_id,
-        poll_url=str(request.url_for("get_job", job_id=job.job_id)),
+        status_url=str(request.url_for("get_job", job_id=job.job_id)),
     )
 
 
 @app.get(
-    "/v1/images/jobs/{job_id}",
+    "/jobs/{job_id}",
     response_model=JobStatus,
     name="get_job",
     dependencies=[Depends(require_token)],
@@ -162,7 +156,7 @@ def get_job(job_id: str) -> JobStatus:
 
 
 @app.delete(
-    "/v1/images/jobs/{job_id}",
+    "/jobs/{job_id}",
     response_model=JobStatus,
     dependencies=[Depends(require_token)],
 )
@@ -172,12 +166,7 @@ def cancel_job(job_id: str) -> JobStatus:
 
 @app.get("/files/{name}")
 def get_file(name: str) -> Response:
-    """blob 下载。内容寻址的 hash 本身不可猜，因此不加鉴权；
-    需要私密性时把这条路由移到 require_token 后面即可。
-
-    名字非法与文件不存在都必须映射成 404：这是资源问题，
-    不是服务端故障，500 会让客户端误以为该重试。
-    """
+    """下载内容寻址的 PNG 结果。"""
     from errors import NotFound
 
     if not _BLOB_NAME.match(name):
@@ -187,12 +176,10 @@ def get_file(name: str) -> Response:
     except FileNotFoundError:
         raise NotFound(f"blob {name} not found")
     except OSError as exc:
-        from errors import ServiceError as _SE
-
-        raise _SE(f"blob read failed: {exc}")
+        raise ServiceError(f"blob read failed: {exc}")
 
 
-# ------------------------------------------------------------------ 健康
+# ------------------------------------------------------------------ 健康与指标
 
 @app.get("/healthz", response_class=PlainTextResponse)
 def healthz() -> str:
@@ -202,7 +189,7 @@ def healthz() -> str:
 @app.get("/readyz", response_class=PlainTextResponse)
 def readyz() -> Response:
     snap = app.state.pool.ready_snapshot()
-    ok = all(v == "ready" for v in snap.values())
+    ok = all(value == "ready" for value in snap.values())
     lines = [f"{op}={state}" for op, state in snap.items()]
     return PlainTextResponse(
         ("ready" if ok else "not_ready") + "\n" + "\n".join(lines),
@@ -212,7 +199,6 @@ def readyz() -> Response:
 
 @app.get("/metrics", response_class=PlainTextResponse)
 def metrics() -> str:
-    """Prometheus 文本格式。只暴露决定「要不要扩容/排障」的指标。"""
     snap = app.state.pool.ready_snapshot()
     lines = []
     for op, state in snap.items():
@@ -224,9 +210,9 @@ def metrics() -> str:
 def _failed(job) -> ServiceError:
     from errors import InferenceFailed, InferenceTimeout, Overloaded
 
-    msg = job.error or "unknown"
+    message = job.error or "unknown"
     if job.status == "expired":
-        return Overloaded(msg, retry_after=30)
-    if "Timeout" in msg or "timeout" in msg:
-        return InferenceTimeout(msg)
-    return InferenceFailed(msg)
+        return Overloaded(message, retry_after=30)
+    if "Timeout" in message or "timeout" in message:
+        return InferenceTimeout(message)
+    return InferenceFailed(message)

@@ -27,12 +27,12 @@ TERMINAL = {"succeeded", "failed", "cancelled", "expired"}
 class Job:
     job_id: str
     task: Task
-    response_format: str
     status: str = "queued"          # queued|running|succeeded|failed|cancelled|expired
     created: int = field(default_factory=lambda: int(time.time()))
     finished: Optional[int] = None
     blobs: list[str] = field(default_factory=list)   # 文件名，不是路径
     seeds: list[int] = field(default_factory=list)
+    elapsed_ms: Optional[int] = None
     error: Optional[str] = None
     # watcher 信号量的一次性释放标记。cancel() 与 _watch 的 finally
     # 都会走到这里，靠它保证只释放一次；否则取消与完成撞上会多释放，
@@ -65,11 +65,11 @@ class JobStore:
         threading.Thread(target=self._gc_loop, daemon=True).start()
 
     # ---------------------------------------------------------------- 提交
-    def submit(self, task: Task, response_format: str) -> Job:
+    def submit(self, task: Task) -> Job:
         """同步与异步共用。异步路径拿 job 立即返回，watcher 在后台推进状态。"""
         if not self._watchers.acquire(blocking=False):
             raise Overloaded("too many in-flight jobs", retry_after=15)
-        job = Job(job_id=uuid.uuid4().hex, task=task, response_format=response_format)
+        job = Job(job_id=uuid.uuid4().hex, task=task)
         try:
             fut = self.pool.submit(task)
         except QueueFull:
@@ -159,8 +159,8 @@ class JobStore:
                 return
 
             job.blobs = [self.blobs.put(b) for b in res.images]
-            job.seeds = [job.task.seed + i if job.task.seed is not None else -1
-                         for i in range(len(res.images))]
+            job.seeds = [job.task.seed + i for i in range(len(res.images))]
+            job.elapsed_ms = res.elapsed_ms
             self._finish(job, "succeeded")
         except Exception as exc:  # noqa: BLE001
             self._finish(job, "failed", f"{type(exc).__name__}: {exc}")
