@@ -5,9 +5,9 @@
 "专职"的：GPU0 -> t2i only，GPU1 -> edit only。副作用是好的：
 一张卡被编辑任务占满时，文生图完全不受影响，不需要任何抢占逻辑。
 
-背压模型：每 op 一个信号量，容量 = 该 op 的卡数（当前 1）。
-GPU 余量只有 ~20 GiB，够单请求的激活值、不够两份并发，
-所以信号量是防线而不是优化。
+背压模型：每 op 一个信号量，容量 = 卡数 × QUEUE_DEPTH_PER_GPU。
+一张卡同一时刻仍只跑 1 个推理（worker 逐个取队列）；多余请求先排队。
+队列满了才 429，避免「第二请求立刻 saturated」。
 """
 from __future__ import annotations
 
@@ -22,8 +22,10 @@ from errors import QueueFull, ServiceError
 from protocol import Result, Task, WorkerEvent
 
 # op -> 分配到的 GPU 编号。改容量只改这张表。
-GPU_ASSIGNMENT: dict[str, list[int]] = {"t2i": [0], "edit": [1]}
+# t2i 使用 1–7（7 路并发）；edit 仍独占一张卡，挪到 0 避免和 t2i 抢同一张。
+GPU_ASSIGNMENT: dict[str, list[int]] = {"t2i": [1, 2, 3, 4, 5, 6, 7], "edit": [0]}
 
+# 每张卡允许「在跑 + 排队」的任务上限。1 张卡时第 2 个请求可排队，第 3 个才 429。
 QUEUE_DEPTH_PER_GPU = 2
 
 
@@ -49,7 +51,11 @@ class WorkerPool:
             op: self._ctx.Queue(maxsize=QUEUE_DEPTH_PER_GPU * len(gpus))
             for op, gpus in self.assignment.items()
         }
-        self._slots = {op: threading.Semaphore(len(g)) for op, g in self.assignment.items()}
+        # 与队列容量对齐：满员前允许入队等待，而不是按卡数瞬间拒掉。
+        self._slots = {
+            op: threading.Semaphore(QUEUE_DEPTH_PER_GPU * len(gpus))
+            for op, gpus in self.assignment.items()
+        }
         self._ready = {op: threading.Event() for op in self.assignment}
         self._init_error: dict[str, str | None] = {op: None for op in self.assignment}
 
@@ -104,7 +110,7 @@ class WorkerPool:
         pending = _Pending(Future(), threading.Event(), time.time())
 
         if not self._slots[op].acquire(blocking=False):
-            # 快速失败：队列已满就让客户端退避，而不是让它挂在连接上
+            # 队列（在跑+等待）已满：让客户端退避；未满则入队等待空闲 GPU
             raise QueueFull(f"{op} is saturated", retry_after=10)
 
         with self._lock:
