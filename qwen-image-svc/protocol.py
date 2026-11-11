@@ -14,7 +14,7 @@ from pydantic import BaseModel, ConfigDict, Field
 # ------------------------------------------------------------------ 模型与参数
 
 ModelAlias = Literal["qwen-image", "qwen-image-edit"]
-Op = Literal["t2i", "edit"]
+Op = Literal["t2i", "edit", "z_image", "z_image_turbo"]
 
 
 class QwenParameters(BaseModel):

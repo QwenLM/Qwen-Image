@@ -20,9 +20,14 @@ from pydantic import BaseModel, ConfigDict, Field
 from errors import InvalidRequest
 from protocol import Task
 
-DASHSCOPE_T2I_MODELS = frozenset({"qwen-image", "qwen-image-plus", "qwen-image-2.0"})
-DASHSCOPE_EDIT_MODELS = frozenset({"qwen-image-edit", "qwen-image-edit-plus"})
+DASHSCOPE_T2I_MODELS = frozenset({"Qwen-Image-2512"})
+DASHSCOPE_EDIT_MODELS = frozenset({"Qwen-Image-Edit-2511"})
+DASHSCOPE_Z_IMAGE_MODELS = frozenset({"Z-Image", "Z-Image-Turbo"})
 DEFAULT_SIZE = (1664, 928)
+Z_IMAGE_DEFAULT_SIZE = (1024, 1536)
+Z_IMAGE_MIN_PIXELS = 512 * 512
+Z_IMAGE_MAX_PIXELS = 2048 * 2048
+Z_IMAGE_PROMPT_MAX_CHARS = 800
 MAX_REMOTE_IMAGE_BYTES = 10 * 1024 * 1024
 REMOTE_IMAGE_TIMEOUT = 10.0
 
@@ -110,15 +115,25 @@ class DashScopeError(BaseModel):
     request_id: str
 
 
-def _parse_size(size: str | None) -> tuple[int, int]:
+def _parse_size(size: str | None, *, default: tuple[int, int] = DEFAULT_SIZE) -> tuple[int, int]:
     if size is None:
-        return DEFAULT_SIZE
+        return default
     match = re.fullmatch(r"(\d{2,4})[x*](\d{2,4})", size.strip())
     if not match:
         raise InvalidRequest("parameters.size must use WIDTH*HEIGHT format")
     width, height = (int(value) for value in match.groups())
     if not 64 <= width <= 2048 or not 64 <= height <= 2048:
         raise InvalidRequest("parameters.size must be between 64 and 2048 pixels")
+    return width, height
+
+
+def _parse_z_image_size(size: str | None) -> tuple[int, int]:
+    width, height = _parse_size(size, default=Z_IMAGE_DEFAULT_SIZE)
+    pixels = width * height
+    if not Z_IMAGE_MIN_PIXELS <= pixels <= Z_IMAGE_MAX_PIXELS:
+        raise InvalidRequest(
+            "parameters.size total pixels must be between 512*512 and 2048*2048"
+        )
     return width, height
 
 
@@ -182,7 +197,58 @@ def _request_parts(request: DashScopeRequest) -> tuple[str, list[str]]:
     return "\n".join(texts), images
 
 
+def _z_image_prompt(request: DashScopeRequest) -> str:
+    texts: list[str] = []
+    images = 0
+    for message in request.input.messages:
+        for item in message.content:
+            if isinstance(item, TextContent):
+                texts.append(item.text)
+            else:
+                images += 1
+    if images:
+        raise InvalidRequest("text-to-image requests cannot contain image content")
+    if len(request.input.messages) != 1 or len(texts) != 1:
+        raise InvalidRequest("Z-Image requests require exactly one text content")
+    prompt = texts[0]
+    if len(prompt) > Z_IMAGE_PROMPT_MAX_CHARS:
+        prompt = prompt[:Z_IMAGE_PROMPT_MAX_CHARS]
+    return prompt
+
+
+def _z_image_task(request: DashScopeRequest) -> Task:
+    parameters = request.parameters
+    if parameters.n != 1:
+        raise InvalidRequest("Z-Image requires parameters.n to be 1")
+    if parameters.prompt_extend:
+        raise InvalidRequest("prompt_extend is not supported in local mode")
+
+    width, height = _parse_z_image_size(parameters.size)
+    if request.model == "Z-Image-Turbo":
+        op = "z_image_turbo"
+        steps, guidance = 9, 0.0
+    else:
+        op = "z_image"
+        steps, guidance = 50, 4.0
+
+    return Task(
+        op=op,
+        prompt=_z_image_prompt(request),
+        negative_prompt=" ",
+        width=width,
+        height=height,
+        seed=parameters.seed,
+        true_cfg_scale=0.0,
+        guidance_scale=guidance,
+        num_inference_steps=steps,
+        num_images_per_prompt=1,
+    )
+
+
 def to_task(request: DashScopeRequest) -> Task:
+    if request.model in DASHSCOPE_Z_IMAGE_MODELS:
+        return _z_image_task(request)
+
     prompt, images = _request_parts(request)
     parameters = request.parameters
     width, height = _parse_size(parameters.size)
