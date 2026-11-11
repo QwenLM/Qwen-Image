@@ -27,6 +27,14 @@ MODEL_REGISTRY = {
         os.environ.get("EDIT_REPO", "Qwen/Qwen-Image-Edit"),
         "QwenImageEditPlusPipeline",
     ),
+    "z_image": (
+        os.environ.get("Z_IMAGE_REPO", "Tongyi-MAI/Z-Image"),
+        "ZImagePipeline",
+    ),
+    "z_image_turbo": (
+        os.environ.get("Z_IMAGE_TURBO_REPO", "Tongyi-MAI/Z-Image-Turbo"),
+        "ZImagePipeline",
+    ),
 }
 
 
@@ -131,7 +139,20 @@ class ModelHost:
                 num_images_per_prompt=1,
                 generator=gen,
             )
-            if self.op == "t2i":
+            if self.op in {"z_image", "z_image_turbo"}:
+                z_kwargs = dict(
+                    prompt=task.prompt,
+                    width=task.width,
+                    height=task.height,
+                    num_inference_steps=task.num_inference_steps,
+                    guidance_scale=task.guidance_scale,
+                    num_images_per_prompt=1,
+                    generator=gen,
+                )
+                if self.op == "z_image" and task.negative_prompt.strip():
+                    z_kwargs["negative_prompt"] = task.negative_prompt
+                image = self._pipe(**z_kwargs).images[0]
+            elif self.op == "t2i":
                 image = self._pipe(
                     width=task.width,
                     height=task.height,
