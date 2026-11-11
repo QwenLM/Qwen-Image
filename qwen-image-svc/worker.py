@@ -18,21 +18,23 @@ from typing import Any
 
 from protocol import Result, Task, WorkerEvent
 
-# op -> (repo_id, pipeline 类名)。用类名字符串而非直接 import，
-# 这样拿注册表的代码不需要把整个 diffusers 拖进来。
-# 同时支持环境变量覆盖，部署机换权重路径不用改代码。
+# op -> (本地权重目录, pipeline 类名)。默认读 /data/models，不走 HuggingFace 下载。
+# 仍可用 T2I_REPO / EDIT_REPO / Z_IMAGE_REPO / Z_IMAGE_TURBO_REPO 覆盖。
 MODEL_REGISTRY = {
-    "t2i": (os.environ.get("T2I_REPO", "Qwen/Qwen-Image"), "QwenImagePipeline"),
+    "t2i": (
+        os.environ.get("T2I_REPO", "/data/models/Qwen-Image-2512"),
+        "QwenImagePipeline",
+    ),
     "edit": (
-        os.environ.get("EDIT_REPO", "Qwen/Qwen-Image-Edit"),
+        os.environ.get("EDIT_REPO", "/data/models/Qwen-Image-Edit-2511"),
         "QwenImageEditPlusPipeline",
     ),
     "z_image": (
-        os.environ.get("Z_IMAGE_REPO", "Tongyi-MAI/Z-Image"),
+        os.environ.get("Z_IMAGE_REPO", "/data/models/Z-Image"),
         "ZImagePipeline",
     ),
     "z_image_turbo": (
-        os.environ.get("Z_IMAGE_TURBO_REPO", "Tongyi-MAI/Z-Image-Turbo"),
+        os.environ.get("Z_IMAGE_TURBO_REPO", "/data/models/Z-Image-Turbo"),
         "ZImagePipeline",
     ),
 }
@@ -91,7 +93,9 @@ class ModelHost:
         repo, cls_name = MODEL_REGISTRY[self.op]
         cls = getattr(diffusers, cls_name)
         pipe = cls.from_pretrained(
-            repo, torch_dtype=getattr(torch, self.dtype_name)
+            repo,
+            torch_dtype=getattr(torch, self.dtype_name),
+            local_files_only=True,
         ).to(self.device)
         pipe.set_progress_bar_config(disable=True)
         self._pipe = pipe

@@ -20,14 +20,14 @@ API 启动后立即监听，权重在 worker 子进程中异步加载；两个 w
 
 ## GPU 分配
 
-| GPU | op | 模型 |
+| GPU | op | 默认本地权重 |
 |---|---|---|
-| 0, 1 | t2i | `Qwen/Qwen-Image` |
-| 2, 3 | edit | `Qwen/Qwen-Image-Edit` |
-| 4, 5 | z_image | `Tongyi-MAI/Z-Image` |
-| 6, 7 | z_image_turbo | `Tongyi-MAI/Z-Image-Turbo` |
+| 0, 1 | t2i | `/data/models/Qwen-Image-2512` |
+| 2, 3 | edit | `/data/models/Qwen-Image-Edit-2511` |
+| 4, 5 | z_image | `/data/models/Z-Image` |
+| 6, 7 | z_image_turbo | `/data/models/Z-Image-Turbo` |
 
-默认四模型各 2 张卡。可用环境变量覆盖卡位与权重路径，例如：
+默认四模型各 2 张卡，权重只读本地目录（`local_files_only=True`，不会上网下载）。可用环境变量覆盖卡位与路径：
 
 ```bash
 export T2I_GPUS=0,1
@@ -35,10 +35,8 @@ export EDIT_GPUS=2,3
 export Z_IMAGE_GPUS=4,5
 export Z_IMAGE_TURBO_GPUS=6,7
 
-export T2I_REPO=/data/models/Qwen-Image-2512
-export EDIT_REPO=/data/models/Qwen-Image-Edit-2511
-export Z_IMAGE_REPO=/data/models/Z-Image
-export Z_IMAGE_TURBO_REPO=/data/models/Z-Image-Turbo
+# 仅当目录不在默认位置时才需要改
+# export T2I_REPO=/data/models/Qwen-Image-2512
 ```
 
 ## DashScope 兼容接口
