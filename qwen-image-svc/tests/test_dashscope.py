@@ -13,7 +13,7 @@ from qwen_image_dashscope import (
 
 
 T2I_REQUEST = {
-    "model": "qwen-image-plus",
+    "model": "Qwen-Image-2512",
     "input": {
         "messages": [
             {
@@ -45,7 +45,7 @@ def test_t2i_request_maps_to_local_task():
 def test_edit_request_accepts_data_url_images():
     request = DashScopeRequest.model_validate(
         {
-            "model": "qwen-image-edit-plus",
+            "model": "Qwen-Image-Edit-2511",
             "input": {
                 "messages": [
                     {
@@ -72,7 +72,7 @@ def test_edit_request_accepts_data_url_images():
 def test_t2i_rejects_image_content():
     request = DashScopeRequest.model_validate(
         {
-            "model": "qwen-image-plus",
+            "model": "Qwen-Image-2512",
             "input": {
                 "messages": [
                     {
@@ -97,7 +97,7 @@ def test_invalid_size_and_model_are_rejected():
             DashScopeRequest.model_validate(
                 {
                     **T2I_REQUEST,
-                    "parameters": {"size": "1920x1080"},
+                    "parameters": {"size": "1920-1080"},
                 }
             )
         )
@@ -133,3 +133,122 @@ def test_response_uses_public_local_file_urls():
 def test_unknown_fields_are_rejected():
     with pytest.raises(ValidationError):
         DashScopeRequest.model_validate({**T2I_REQUEST, "extra": True})
+
+
+Z_IMAGE_REQUEST = {
+    "model": "Z-Image-Turbo",
+    "input": {
+        "messages": [
+            {
+                "role": "user",
+                "content": [{"text": "一只坐着的橘黄色的猫"}],
+            }
+        ]
+    },
+    "parameters": {
+        "size": "1024*1536",
+        "prompt_extend": False,
+        "seed": 42,
+    },
+}
+
+
+def test_z_image_turbo_maps_to_local_task_with_official_defaults():
+    task = to_task(DashScopeRequest.model_validate(Z_IMAGE_REQUEST))
+
+    assert task.op == "z_image_turbo"
+    assert task.prompt == "一只坐着的橘黄色的猫"
+    assert (task.width, task.height) == (1024, 1536)
+    assert task.num_images_per_prompt == 1
+    assert task.seed == 42
+    assert task.num_inference_steps == 9
+    assert task.guidance_scale == 0.0
+
+
+def test_z_image_maps_to_base_worker_defaults():
+    task = to_task(
+        DashScopeRequest.model_validate(
+            {
+                **Z_IMAGE_REQUEST,
+                "model": "Z-Image",
+                "parameters": {"size": "1280*720", "seed": 7},
+            }
+        )
+    )
+
+    assert task.op == "z_image"
+    assert (task.width, task.height) == (1280, 720)
+    assert task.num_inference_steps == 50
+    assert task.guidance_scale == 4.0
+
+
+def test_z_image_default_size_is_official():
+    task = to_task(
+        DashScopeRequest.model_validate(
+            {
+                "model": "Z-Image-Turbo",
+                "input": Z_IMAGE_REQUEST["input"],
+                "parameters": {"seed": 1},
+            }
+        )
+    )
+
+    assert (task.width, task.height) == (1024, 1536)
+
+
+def test_z_image_rejects_n_not_one_and_images():
+    with pytest.raises(InvalidRequest, match="n"):
+        to_task(
+            DashScopeRequest.model_validate(
+                {
+                    **Z_IMAGE_REQUEST,
+                    "parameters": {"size": "1024*1024", "n": 2, "seed": 1},
+                }
+            )
+        )
+
+    with pytest.raises(InvalidRequest, match="cannot contain image"):
+        to_task(
+            DashScopeRequest.model_validate(
+                {
+                    "model": "Z-Image",
+                    "input": {
+                        "messages": [
+                            {
+                                "role": "user",
+                                "content": [
+                                    {"image": "data:image/png;base64,aGk="},
+                                    {"text": "cat"},
+                                ],
+                            }
+                        ]
+                    },
+                }
+            )
+        )
+
+
+def test_z_image_rejects_invalid_pixel_area_and_prompt_extend():
+    with pytest.raises(InvalidRequest, match="size"):
+        to_task(
+            DashScopeRequest.model_validate(
+                {
+                    **Z_IMAGE_REQUEST,
+                    "parameters": {"size": "256*256", "seed": 1},
+                }
+            )
+        )
+
+    with pytest.raises(InvalidRequest, match="prompt_extend"):
+        to_task(
+            DashScopeRequest.model_validate(
+                {
+                    **Z_IMAGE_REQUEST,
+                    "parameters": {
+                        "size": "1024*1024",
+                        "prompt_extend": True,
+                        "seed": 1,
+                    },
+                }
+            )
+        )

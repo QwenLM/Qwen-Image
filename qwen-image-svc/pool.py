@@ -11,6 +11,7 @@
 """
 from __future__ import annotations
 
+import os
 import threading
 import time
 import uuid
@@ -21,9 +22,24 @@ from multiprocessing import get_context
 from errors import QueueFull, ServiceError
 from protocol import Result, Task, WorkerEvent
 
-# op -> 分配到的 GPU 编号。改容量只改这张表。
-# t2i 使用 1–7（7 路并发）；edit 仍独占一张卡，挪到 0 避免和 t2i 抢同一张。
-GPU_ASSIGNMENT: dict[str, list[int]] = {"t2i": [1, 2, 3, 4, 5, 6, 7], "edit": [0]}
+
+def _parse_gpus(env_name: str, default: list[int]) -> list[int]:
+    raw = os.environ.get(env_name)
+    if raw is None:
+        return list(default)
+    raw = raw.strip()
+    if not raw:
+        return []
+    return [int(part.strip()) for part in raw.split(",") if part.strip()]
+
+
+# op -> 分配到的 GPU 编号。默认四模型各 2 张卡（可用环境变量覆盖）。
+GPU_ASSIGNMENT: dict[str, list[int]] = {
+    "t2i": _parse_gpus("T2I_GPUS", [0, 1]),
+    "edit": _parse_gpus("EDIT_GPUS", [2, 3]),
+    "z_image": _parse_gpus("Z_IMAGE_GPUS", [4, 5]),
+    "z_image_turbo": _parse_gpus("Z_IMAGE_TURBO_GPUS", [6, 7]),
+}
 
 # 每张卡允许「在跑 + 排队」的任务上限。1 张卡时第 2 个请求可排队，第 3 个才 429。
 QUEUE_DEPTH_PER_GPU = 2

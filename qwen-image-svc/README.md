@@ -20,12 +20,24 @@ API 启动后立即监听，权重在 worker 子进程中异步加载；两个 w
 
 ## GPU 分配
 
-| GPU | op | 模型 |
+| GPU | op | 默认本地权重 |
 |---|---|---|
-| 1, 2, 3, 4, 5, 6, 7 | t2i | `Qwen/Qwen-Image` |
-| 0 | edit | `Qwen/Qwen-Image-Edit` |
+| 0, 1 | t2i | `/data/models/Qwen-Image-2512` |
+| 2, 3 | edit | `/data/models/Qwen-Image-Edit-2511` |
+| 4, 5 | z_image | `/data/models/Z-Image` |
+| 6, 7 | z_image_turbo | `/data/models/Z-Image-Turbo` |
 
-修改 `pool.GPU_ASSIGNMENT` 可以调整卡位。部署机也可以通过 `T2I_REPO` 和 `EDIT_REPO` 覆盖模型路径。
+默认四模型各 2 张卡，权重只读本地目录（`local_files_only=True`，不会上网下载）。可用环境变量覆盖卡位与路径：
+
+```bash
+export T2I_GPUS=0,1
+export EDIT_GPUS=2,3
+export Z_IMAGE_GPUS=4,5
+export Z_IMAGE_TURBO_GPUS=6,7
+
+# 仅当目录不在默认位置时才需要改
+# export T2I_REPO=/data/models/Qwen-Image-2512
+```
 
 ## DashScope 兼容接口
 
@@ -37,15 +49,16 @@ POST /api/v1/services/aigc/multimodal-generation/generation
 
 请求使用 DashScope 的 `model`、`input.messages` 和 `parameters` 字段。模型名映射到本地 worker：
 
-- `qwen-image-plus`、`qwen-image-2.0`：本地文生图模型
-- `qwen-image-edit-plus`：本地图像编辑模型
+- `Qwen-Image-2512`：本地文生图模型
+- `Qwen-Image-Edit-2511`：本地图像编辑模型
+- `Z-Image` / `Z-Image-Turbo`：本地 Z-Image 文生图（官方参数：`size` / `prompt_extend` / `seed`，`n` 固定为 1）
 
 ```bash
 curl -s http://127.0.0.1:8000/api/v1/services/aigc/multimodal-generation/generation \\
   -H "Authorization: Bearer $SVC_TOKEN" \\
   -H 'Content-Type: application/json' \\
   -d '{
-    "model": "qwen-image-plus",
+    "model": "Qwen-Image-2512",
     "input": {
       "messages": [{
         "role": "user",
@@ -55,6 +68,28 @@ curl -s http://127.0.0.1:8000/api/v1/services/aigc/multimodal-generation/generat
     "parameters": {
       "size": "1664*928",
       "n": 1,
+      "seed": 42
+    }
+  }'
+```
+
+Z-Image-Turbo 示例：
+
+```bash
+curl -s http://127.0.0.1:8000/api/v1/services/aigc/multimodal-generation/generation \
+  -H "Authorization: Bearer $SVC_TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "model": "Z-Image-Turbo",
+    "input": {
+      "messages": [{
+        "role": "user",
+        "content": [{"text": "一只坐着的橘黄色的猫"}]
+      }]
+    },
+    "parameters": {
+      "size": "1024*1536",
+      "prompt_extend": false,
       "seed": 42
     }
   }'

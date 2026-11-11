@@ -72,7 +72,7 @@ dashscope=$(curl -s -w '\\n%{http_code}' -X POST \\
   "$BASE/api/v1/services/aigc/multimodal-generation/generation" \\
   "${AUTH[@]}" "${JSON[@]}" \\
   -d '{
-    "model":"qwen-image-plus",
+    "model":"Qwen-Image-2512",
     "input":{"messages":[{"role":"user","content":[{"text":"dashscope smoke"}]}]},
     "parameters":{"size":"1664*928","n":2,"seed":11,"num_inference_steps":10}
   }')
