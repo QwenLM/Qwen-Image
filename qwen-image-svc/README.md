@@ -120,7 +120,7 @@ curl -s http://127.0.0.1:8000/generate \
     "height": 928,
     "true_cfg_scale": 4.0,
     "guidance_scale": 1.0,
-    "num_inference_steps": 50,
+    "num_inference_steps": 25,
     "num_images_per_prompt": 1
   }'
 ```
@@ -151,7 +151,7 @@ curl -s http://127.0.0.1:8000/generate \
     "seed": 42,
     "true_cfg_scale": 4.0,
     "guidance_scale": 1.0,
-    "num_inference_steps": 50,
+    "num_inference_steps": 25,
     "num_images_per_prompt": 1
   }'
 ```

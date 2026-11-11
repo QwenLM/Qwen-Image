@@ -178,7 +178,7 @@ def test_z_image_maps_to_base_worker_defaults():
 
     assert task.op == "z_image"
     assert (task.width, task.height) == (1280, 720)
-    assert task.num_inference_steps == 50
+    assert task.num_inference_steps == 25
     assert task.guidance_scale == 4.0
 
 

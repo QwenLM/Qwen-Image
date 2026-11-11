@@ -27,7 +27,7 @@ class QwenParameters(BaseModel):
     seed: int = Field(default=42, ge=0, le=2**31 - 1)
     true_cfg_scale: float = Field(default=4.0, ge=0.0, le=20.0)
     guidance_scale: float = Field(default=1.0, ge=0.0, le=20.0)
-    num_inference_steps: int = Field(default=50, ge=1, le=100)
+    num_inference_steps: int = Field(default=25, ge=1, le=100)
     num_images_per_prompt: int = Field(default=1, ge=1, le=4)
 
 

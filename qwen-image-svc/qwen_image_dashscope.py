@@ -69,7 +69,7 @@ class DashScopeParameters(BaseModel):
     negative_prompt: str = " "
     true_cfg_scale: float = Field(default=4.0, ge=0.0, le=20.0)
     guidance_scale: float = Field(default=1.0, ge=0.0, le=20.0)
-    num_inference_steps: int = Field(default=50, ge=1, le=100)
+    num_inference_steps: int = Field(default=25, ge=1, le=100)
     prompt_extend: bool | None = None
     watermark: bool | None = None
 
@@ -229,7 +229,7 @@ def _z_image_task(request: DashScopeRequest) -> Task:
         steps, guidance = 9, 0.0
     else:
         op = "z_image"
-        steps, guidance = 50, 4.0
+        steps, guidance = 25, 4.0
 
     return Task(
         op=op,
