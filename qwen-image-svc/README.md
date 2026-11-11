@@ -23,17 +23,17 @@ API 启动后立即监听，权重在 worker 子进程中异步加载；两个 w
 | GPU | op | 默认本地权重 |
 |---|---|---|
 | 0, 1 | t2i | `/data/models/Qwen-Image-2512` |
-| 2, 3 | edit | `/data/models/Qwen-Image-Edit-2511` |
+| 2, 3, 6 | edit | `/data/models/Qwen-Image-Edit-2511` |
 | 4, 5 | z_image | `/data/models/Z-Image` |
-| 6, 7 | z_image_turbo | `/data/models/Z-Image-Turbo` |
+| 7 | z_image_turbo | `/data/models/Z-Image-Turbo` |
 
-默认四模型各 2 张卡，权重只读本地目录（`local_files_only=True`，不会上网下载）。可用环境变量覆盖卡位与路径：
+权重只读本地目录（`local_files_only=True`，不会上网下载）。可用环境变量覆盖卡位与路径：
 
 ```bash
 export T2I_GPUS=0,1
-export EDIT_GPUS=2,3
+export EDIT_GPUS=2,3,6
 export Z_IMAGE_GPUS=4,5
-export Z_IMAGE_TURBO_GPUS=6,7
+export Z_IMAGE_TURBO_GPUS=7
 
 # 仅当目录不在默认位置时才需要改
 # export T2I_REPO=/data/models/Qwen-Image-2512
@@ -205,7 +205,7 @@ curl -X DELETE "http://127.0.0.1:8000/jobs/$JOB" \
 
 - `401`：鉴权失败
 - `404`：任务或 Blob 不存在
-- `429`：该 op 的排队名额已满（在跑 + 等待超过 `卡数 × QUEUE_DEPTH_PER_GPU`）；未满时请求会排队等 GPU，不会因「卡正忙」立刻 429
+- `429`：该 op 的排队名额已满（在跑 + 等待超过 `QUEUE_SLOTS_PER_OP`，默认 12）；未满时请求会排队等 GPU，不会因「卡正忙」立刻 429
 - `503`：排队超时或服务过载
 - `500`：推理失败
 - `504`：推理超时

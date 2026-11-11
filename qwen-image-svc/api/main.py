@@ -39,7 +39,7 @@ from qwen_image_dashscope import (
 AUTH_TOKEN = os.environ.get("SVC_TOKEN", "")
 DATA_DIR = os.environ.get("SVC_DATA_DIR", "./data")
 PUBLIC_BASE_URL = os.environ.get("SVC_PUBLIC_BASE_URL", "").rstrip("/")
-QUEUE_DEADLINE = float(os.environ.get("SVC_QUEUE_DEADLINE", "120"))
+QUEUE_DEADLINE = float(os.environ.get("SVC_QUEUE_DEADLINE", "480"))
 INFER_TIMEOUT = float(os.environ.get("SVC_INFER_TIMEOUT", "300"))
 JOB_TTL = int(os.environ.get("SVC_JOB_TTL", str(24 * 3600)))
 DASHSCOPE_PATH = "/api/v1/services/aigc/multimodal-generation/generation"

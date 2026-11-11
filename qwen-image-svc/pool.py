@@ -5,7 +5,7 @@
 "专职"的：GPU0 -> t2i only，GPU1 -> edit only。副作用是好的：
 一张卡被编辑任务占满时，文生图完全不受影响，不需要任何抢占逻辑。
 
-背压模型：每 op 一个信号量，容量 = 卡数 × QUEUE_DEPTH_PER_GPU。
+背压模型：每个 op 的「在跑 + 排队」名额固定为 QUEUE_SLOTS_PER_OP。
 一张卡同一时刻仍只跑 1 个推理（worker 逐个取队列）；多余请求先排队。
 队列满了才 429，避免「第二请求立刻 saturated」。
 """
@@ -33,16 +33,17 @@ def _parse_gpus(env_name: str, default: list[int]) -> list[int]:
     return [int(part.strip()) for part in raw.split(",") if part.strip()]
 
 
-# op -> 分配到的 GPU 编号。默认四模型各 2 张卡（可用环境变量覆盖）。
+# op -> 分配到的 GPU 编号。可用环境变量覆盖。
 GPU_ASSIGNMENT: dict[str, list[int]] = {
     "t2i": _parse_gpus("T2I_GPUS", [0, 1]),
-    "edit": _parse_gpus("EDIT_GPUS", [2, 3]),
+    "edit": _parse_gpus("EDIT_GPUS", [2, 3, 6]),
     "z_image": _parse_gpus("Z_IMAGE_GPUS", [4, 5]),
-    "z_image_turbo": _parse_gpus("Z_IMAGE_TURBO_GPUS", [6, 7]),
+    "z_image_turbo": _parse_gpus("Z_IMAGE_TURBO_GPUS", [7]),
 }
 
-# 每张卡允许「在跑 + 排队」的任务上限。1 张卡时第 2 个请求可排队，第 3 个才 429。
-QUEUE_DEPTH_PER_GPU = 2
+# 每个 op「在跑 + 排队」的任务上限，与卡数无关。
+# 2 张卡时相当于每卡 6 个，3 张卡时相当于每卡 4 个，1 张卡时 12 个都堆在这一张上。
+QUEUE_SLOTS_PER_OP = 12
 
 
 @dataclass
@@ -64,13 +65,13 @@ class WorkerPool:
         self._event_q = self._ctx.Queue()
 
         self._task_q = {
-            op: self._ctx.Queue(maxsize=QUEUE_DEPTH_PER_GPU * len(gpus))
+            op: self._ctx.Queue(maxsize=QUEUE_SLOTS_PER_OP)
             for op, gpus in self.assignment.items()
         }
         # 与队列容量对齐：满员前允许入队等待，而不是按卡数瞬间拒掉。
         self._slots = {
-            op: threading.Semaphore(QUEUE_DEPTH_PER_GPU * len(gpus))
-            for op, gpus in self.assignment.items()
+            op: threading.Semaphore(QUEUE_SLOTS_PER_OP)
+            for op in self.assignment
         }
         self._ready = {op: threading.Event() for op in self.assignment}
         self._init_error: dict[str, str | None] = {op: None for op in self.assignment}

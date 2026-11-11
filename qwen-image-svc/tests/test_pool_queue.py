@@ -8,7 +8,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from errors import QueueFull
-from pool import QUEUE_DEPTH_PER_GPU, WorkerPool
+from pool import QUEUE_SLOTS_PER_OP, WorkerPool
 from protocol import Task
 
 
@@ -73,7 +73,7 @@ def one_gpu_pool(monkeypatch):
 def test_second_submit_queues_instead_of_429(one_gpu_pool):
     """一张卡时，第二个请求应进入队列，而不是立刻 saturated。"""
     pool = one_gpu_pool
-    assert QUEUE_DEPTH_PER_GPU >= 2
+    assert QUEUE_SLOTS_PER_OP >= 2
 
     pool.submit(_task())
     pool.submit(_task())  # must queue, not raise
@@ -81,7 +81,7 @@ def test_second_submit_queues_instead_of_429(one_gpu_pool):
 
 def test_submit_rejects_only_when_queue_depth_exceeded(one_gpu_pool):
     pool = one_gpu_pool
-    for _ in range(QUEUE_DEPTH_PER_GPU):
+    for _ in range(QUEUE_SLOTS_PER_OP):
         pool.submit(_task())
 
     with pytest.raises(QueueFull):

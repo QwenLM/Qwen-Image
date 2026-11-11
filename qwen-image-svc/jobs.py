@@ -46,7 +46,7 @@ class JobStore:
         pool: WorkerPool,
         blobs: BlobStore,
         *,
-        queue_deadline: float = 120.0,
+        queue_deadline: float = 480.0,
         infer_timeout: float = 300.0,
         ttl_seconds: int = 24 * 3600,
         max_watchers: int = 64,
