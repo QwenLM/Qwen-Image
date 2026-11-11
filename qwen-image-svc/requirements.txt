@@ -1,0 +1,16 @@
+fastapi>=0.115
+uvicorn[standard]>=0.30
+pydantic>=2.7
+pillow>=10
+
+# 仅推理机需要（worker.py）。API 进程的依赖里刻意不含它们，
+# 但同一台机器部署时一起装即可。
+torch>=2.4
+# Z-Image 需要带 ZImagePipeline 的 diffusers（建议较新版本或从源码安装）
+diffusers>=0.32
+transformers>=4.45
+accelerate>=0.33
+
+# 测试
+pytest>=8
+httpx>=0.27

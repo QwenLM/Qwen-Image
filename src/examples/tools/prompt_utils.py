@@ -170,15 +170,25 @@ def polish_prompt_zh(original_prompt):
 
 
 def rewrite(input_prompt):
+    # Skip cloud prompt enhance when no DashScope key is configured.
+    if not os.environ.get('DASHSCOPE_API_KEY'):
+        print("[prompt_utils] DASHSCOPE_API_KEY not set; using original prompt")
+        return input_prompt
+
     lang = get_caption_language(input_prompt)
     if lang == 'zh':
         return polish_prompt_zh(input_prompt)
     elif lang == 'en':
-
         return polish_prompt_en(input_prompt)
+    return input_prompt
 
 
 def polish_edit_prompt(prompt, img):
+    # Skip cloud edit-prompt enhance when no DashScope key is configured.
+    if not os.environ.get('DASH_API_KEY') and not os.environ.get('DASHSCOPE_API_KEY'):
+        print("[prompt_utils] No DashScope key set; using original edit prompt")
+        return prompt
+
     EDIT_SYSTEM_PROMPT = '''
 # Edit Prompt Enhancer
 You are a professional edit prompt enhancer. Your task is to generate a direct and specific edit prompt based on the user-provided instruction and the image input conditions.  

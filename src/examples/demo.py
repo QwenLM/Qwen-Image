@@ -17,8 +17,9 @@ mp.set_start_method('spawn', force=True)
 from diffusers import DiffusionPipeline
 import torch
 from tools.prompt_utils import rewrite
+from model_paths import QWEN_IMAGE_MODEL
 
-model_repo_id = "Qwen/Qwen-Image"
+model_repo_id = QWEN_IMAGE_MODEL
 MAX_SEED = np.iinfo(np.int32).max
 MAX_IMAGE_SIZE = 1440
 
@@ -48,7 +49,11 @@ class GPUWorker:
             else:
                 torch_dtype = torch.float32
             
-            self.pipe = DiffusionPipeline.from_pretrained(self.model_repo_id, torch_dtype=torch_dtype)
+            self.pipe = DiffusionPipeline.from_pretrained(
+                self.model_repo_id,
+                torch_dtype=torch_dtype,
+                local_files_only=True,
+            )
             self.pipe = self.pipe.to(self.device)
             print(f"GPU {self.gpu_id} model initialized successfully")
             return True
